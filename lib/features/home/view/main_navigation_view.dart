@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
 import 'home_view.dart';
 import '../../symptom/view/symptom_view.dart';
+import '../../scan/view/scan_view.dart';
+import '../../profile/view/profile_view.dart';
 
 class MainNavigationView extends StatefulWidget {
   const MainNavigationView({super.key});
@@ -9,127 +14,124 @@ class MainNavigationView extends StatefulWidget {
   State<MainNavigationView> createState() => _MainNavigationViewState();
 }
 
-class _MainNavigationViewState extends State<MainNavigationView> {
-  int currentIndex = 0;
+class _MainNavigationViewState extends State<MainNavigationView>
+    with TickerProviderStateMixin {
+  int _currentIndex = 0;
 
-  final screens = [
-    const HomeView(),
-    const SymptomView(),
-    const Center(child: Text("Scan View")),
-    const Center(child: Text("Profile View")),
+  final _screens = const [
+    HomeView(),
+    SymptomView(),
+    ScanView(),
+    ProfileView(),
   ];
+
+  final _navItems = const [
+    _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
+    _NavItem(icon: Icons.health_and_safety_rounded, label: 'Gejala'),
+    _NavItem(icon: Icons.qr_code_scanner_rounded, label: 'Scan'),
+    _NavItem(icon: Icons.person_rounded, label: 'Profil'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _onTabTap(int index) {
+    if (_currentIndex == index) return;
+    HapticFeedback.lightImpact();
+    setState(() => _currentIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: screens[currentIndex],
-
-      bottomNavigationBar: Container(
-        height: 70,
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 15,
-              color: Colors.black.withOpacity(0.08),
-            ),
-          ],
-        ),
-
-        /// 🔥 FIX UTAMA PAKAI LAYOUTBUILDER (BIAR PRESISI)
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double itemWidth = constraints.maxWidth / 4;
-
-            return Stack(
-              children: [
-
-                /// 🔥 INDICATOR (GESER SESUAI INDEX)
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  left: itemWidth * currentIndex,
-                  child: Container(
-                    width: itemWidth,
-                    height: 50,
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 70,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF40627B),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
-
-                /// 🔥 MENU ITEMS
-                Row(
-                  children: [
-                    _navItem(Icons.home, "Home", 0),
-                    _navItem(Icons.healing, "Gejala", 1),
-                    _navItem(Icons.qr_code_scanner, "Scan", 2),
-                    _navItem(Icons.person, "Profile", 3),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
+      extendBody: true,
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  /// 🔥 NAV ITEM
-  Widget _navItem(IconData icon, String label, int index) {
-    final isActive = currentIndex == index;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        child: SizedBox(
-          height: 50,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              /// ICON ANIMASI
-              AnimatedScale(
-                duration: const Duration(milliseconds: 300),
-                scale: isActive ? 1.2 : 1.0,
-                child: Icon(
-                  icon,
-                  color: isActive ? Colors.white : Colors.grey,
-                ),
-              ),
-
-              /// TEXT ANIMASI
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isActive ? 1 : 0,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildBottomNav() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
           ),
-        ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: _navItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isActive = _currentIndex == index;
+
+          return GestureDetector(
+            onTap: () => _onTabTap(index),
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      item.icon,
+                      key: ValueKey('$index-$isActive'),
+                      size: 22,
+                      color: isActive ? Colors.white : AppColors.textTertiary,
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
+                    child: isActive
+                        ? Row(
+                            children: [
+                              const SizedBox(width: 8),
+                              Text(
+                                item.label,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  const _NavItem({required this.icon, required this.label});
 }
