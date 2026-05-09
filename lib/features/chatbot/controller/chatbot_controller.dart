@@ -31,12 +31,21 @@ class ChatbotController extends GetxController {
 
     // Simulate bot response
     Future.delayed(const Duration(milliseconds: 500), () {
-      messages.add(
-        Message(
-          content: 'Terima kasih atas pertanyaannya. Mohon tunggu...',
-          isUser: false,
-        ),
-      );
+      try {
+        messages.add(
+          Message(
+            content: 'Terima kasih atas pertanyaannya. Mohon tunggu...',
+            isUser: false,
+          ),
+        );
+      } catch (e) {
+        messages.add(
+          Message(
+            content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+            isUser: false,
+          ),
+        );
+      }
     });
   }
 

@@ -80,7 +80,7 @@ class _SymptomViewState extends State<SymptomView> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SymptomController());
+    final controller = Get.find<SymptomController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,

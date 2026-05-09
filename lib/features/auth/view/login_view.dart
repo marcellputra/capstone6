@@ -209,12 +209,13 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: 'contoh@email.com',
-                                prefixIcon: Icon(
-                                  Icons.email_outlined,
-                                  size: 20,
-                                ),
+                                prefixIcon:
+                                    const Icon(Icons.email_outlined, size: 20),
+                                errorText: auth.emailError.value.isEmpty
+                                    ? null
+                                    : auth.emailError.value,
                               ),
                             ),
 
@@ -270,6 +271,9 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                       size: 20,
                                     ),
                                   ),
+                                  errorText: auth.passwordError.value.isEmpty
+                                      ? null
+                                      : auth.passwordError.value,
                                 ),
                               ),
                             ),
@@ -363,7 +367,7 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: () => Get.toNamed(AppRoutes.REGISTER),
+                                  onTap: () => Get.toNamed(AppRoutes.register),
                                   child: Text(
                                     'Daftar sekarang',
                                     style: GoogleFonts.plusJakartaSans(

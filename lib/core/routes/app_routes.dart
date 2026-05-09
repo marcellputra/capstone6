@@ -1,12 +1,12 @@
 class AppRoutes {
-  static const SPLASH = '/splash';
-  static const ONBOARDING = '/onboarding';
-  static const LOGIN = '/login';
-  static const REGISTER = '/register';
-  static const HOME = '/home';
-  static const SYMPTOM = '/symptom';
-  static const RECOMMENDATION = '/recommendation';
-  static const SCAN = '/scan';
-  static const CHATBOT = '/chatbot';
-  static const PROFILE = '/profile';
+  static const splash = '/splash';
+  static const onboarding = '/onboarding';
+  static const login = '/login';
+  static const register = '/register';
+  static const home = '/home';
+  static const symptom = '/symptom';
+  static const recommendation = '/recommendation';
+  static const scan = '/scan';
+  static const chatbot = '/chatbot';
+  static const profile = '/profile';
 }

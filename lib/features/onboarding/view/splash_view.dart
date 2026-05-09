@@ -77,9 +77,9 @@ class _SplashViewState extends State<SplashView>
   void _navigate() {
     final auth = Get.find<AuthController>();
     if (auth.isLogin.value) {
-      Get.offAllNamed(AppRoutes.HOME);
+      Get.offAllNamed(AppRoutes.home);
     } else {
-      Get.offAllNamed(AppRoutes.ONBOARDING);
+      Get.offAllNamed(AppRoutes.onboarding);
     }
   }
 

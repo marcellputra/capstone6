@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/controller/auth_controller.dart';
+import '../../../core/routes/app_routes.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -20,10 +22,12 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
 
     _headerController = AnimationController(
       vsync: this,
@@ -34,14 +38,18 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 600),
     );
 
-    _headerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _headerController, curve: Curves.easeOutCubic));
+    _headerSlide = Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _headerController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
-    _cardsOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _cardsController, curve: Curves.easeOut),
-    );
+    _cardsOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _cardsController, curve: Curves.easeOut));
 
     _headerController.forward();
     Future.delayed(const Duration(milliseconds: 300), _cardsController.forward);
@@ -134,71 +142,81 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Halo, Budi! 👋',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Semoga Anda sehat hari ini',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Stack(
+                  Obx(() {
+                    final authController = Get.find<AuthController>();
+                    final name = authController.userData['name'] ?? 'Guest';
+                    final firstName = name.split(' ').isNotEmpty ? name.split(' ')[0] : 'Guest';
+                    final encodedName = Uri.encodeComponent(name);
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.15),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  width: 2,
-                                ),
-                                image: const DecorationImage(
-                                  image: NetworkImage(
-                                    'https://ui-avatars.com/api/?name=Budi+Santoso&background=fff&color=0B6E4F&size=200',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
+                            Text(
+                              'Halo, $firstName! 👋',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.3,
                               ),
                             ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.secondary,
-                                  border: Border.all(color: AppColors.primary, width: 2),
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Semoga Anda sehat hari ini',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.75),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.4),
+                                    width: 2,
+                                  ),
+                                  image: DecorationImage(
+                                    image: NetworkImage(
+                                      'https://ui-avatars.com/api/?name=$encodedName&background=fff&color=0B6E4F&size=200',
+                                    ),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColors.secondary,
+                                    border: Border.all(
+                                      color: AppColors.primary,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
 
                   const SizedBox(height: 20),
 
@@ -206,7 +224,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   GestureDetector(
                     onTap: () {},
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
@@ -217,8 +238,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search_rounded,
-                              color: Colors.white.withValues(alpha: 0.8), size: 20),
+                          Icon(
+                            Icons.search_rounded,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            size: 20,
+                          ),
                           const SizedBox(width: 10),
                           Text(
                             'Cari obat, gejala, atau apotek...',
@@ -234,8 +258,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.tune_rounded,
-                                color: Colors.white.withValues(alpha: 0.9), size: 16),
+                            child: Icon(
+                              Icons.tune_rounded,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              size: 16,
+                            ),
                           ),
                         ],
                       ),
@@ -268,7 +295,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         label: 'Cek\nGejala',
         bgColor: const Color(0xFFE6F4EF),
         iconColor: AppColors.primary,
-        onTap: () => Get.toNamed('/symptom'),
+        onTap: () => Get.toNamed(AppRoutes.symptom),
       ),
       _QuickAction(
         icon: Icons.document_scanner_rounded,
@@ -350,7 +377,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
   Widget _buildHeroBanner() {
     return GestureDetector(
-      onTap: () => Get.toNamed('/symptom'),
+      onTap: () => Get.toNamed(AppRoutes.symptom),
       child: Container(
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
@@ -370,7 +397,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -405,7 +435,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -463,7 +496,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final tip = tips[index];
           return Container(

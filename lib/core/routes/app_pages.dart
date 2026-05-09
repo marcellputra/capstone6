@@ -24,65 +24,65 @@ import 'app_routes.dart';
 class AppPages {
   static final routes = [
     // Splash - without binding (just display)
-    GetPage(name: AppRoutes.SPLASH, page: () => const SplashView()),
+    GetPage(name: AppRoutes.splash, page: () => const SplashView()),
 
     // Auth - dengan binding
     GetPage(
-      name: AppRoutes.LOGIN,
+      name: AppRoutes.login,
       page: () => const LoginView(),
       binding: AuthBinding(),
     ),
     GetPage(
-      name: AppRoutes.REGISTER,
+      name: AppRoutes.register,
       page: () => const RegisterView(),
       binding: AuthBinding(),
     ),
 
     // Onboarding - tanpa binding
     GetPage(
-      name: AppRoutes.ONBOARDING,
+      name: AppRoutes.onboarding,
       page: () => const OnboardingView(),
       binding: OnboardingBinding(),
     ),
 
     // Home - Main Navigation dengan binding
     GetPage(
-      name: AppRoutes.HOME,
+      name: AppRoutes.home,
       page: () => const MainNavigationView(),
       binding: HomeBinding(),
     ),
 
     // Symptom - dengan binding
     GetPage(
-      name: AppRoutes.SYMPTOM,
+      name: AppRoutes.symptom,
       page: () => const SymptomView(),
       binding: SymptomBinding(),
     ),
 
     // Recommendation - dengan binding
     GetPage(
-      name: AppRoutes.RECOMMENDATION,
+      name: AppRoutes.recommendation,
       page: () => const RecommendationView(),
       binding: RecommendationBinding(),
     ),
 
     // Scan - dengan binding
     GetPage(
-      name: AppRoutes.SCAN,
+      name: AppRoutes.scan,
       page: () => const ScanView(),
       binding: ScanBinding(),
     ),
 
     // Chatbot - dengan binding
     GetPage(
-      name: AppRoutes.CHATBOT,
+      name: AppRoutes.chatbot,
       page: () => const ChatbotView(),
       binding: ChatbotBinding(),
     ),
 
     // Profile - dengan binding
     GetPage(
-      name: AppRoutes.PROFILE,
+      name: AppRoutes.profile,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
     ),

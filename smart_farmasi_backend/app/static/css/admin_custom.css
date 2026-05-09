@@ -1,0 +1,465 @@
+:root {
+    --primary-purple: #8b5cf6;
+    --primary-light-purple: #a78bfa;
+    --sidebar-bg: #000000;
+    --main-bg: #fbfaf7;
+    --card-bg: #ffffff;
+    --text-dark: #111827;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --success-green: #10b981;
+    --warning-gold: #f59e0b;
+    --error-red: #ef4444;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--main-bg);
+    color: var(--text-dark);
+    margin: 0;
+}
+
+/* Sidebar Styling - Bruddle Style */
+.admin-sidebar {
+    background-color: var(--sidebar-bg);
+    min-height: 100vh;
+    padding: 1.5rem;
+    color: white;
+    width: 260px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.sidebar-brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-brand span {
+    color: var(--primary-purple);
+}
+
+.nav-section-title {
+    color: #4b5563;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+}
+
+.sidebar-nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    color: #9ca3af;
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+}
+
+.sidebar-nav-link i {
+    margin-right: 1rem;
+    font-size: 1.1rem;
+}
+
+.sidebar-nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.sidebar-nav-link.active {
+    background-color: var(--primary-purple);
+    color: white;
+}
+
+.nav-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.sidebar-nav-link.active .nav-badge {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Top Header */
+.main-content-wrapper {
+    margin-left: 260px;
+    padding: 2rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+}
+
+.header-title h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.btn-create-new {
+    background-color: var(--primary-purple);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Bruddle Cards */
+.bruddle-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    height: 100%;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.progress-container {
+    margin: 1.5rem 0;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-custom {
+    height: 6px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 10px;
+}
+
+.card-footer-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.date-badge-custom {
+    background: #f3f4f6;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid #e5e7eb;
+}
+
+/* Activity List */
+.activity-list-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 2rem;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.list-tabs {
+    display: flex;
+    gap: 1rem;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background: black;
+    color: white;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    margin-right: 1.5rem;
+}
+
+.activity-icon-box {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    color: var(--primary-purple);
+}
+
+.activity-main-info {
+    flex: 1;
+}
+
+.activity-item-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.activity-item-progress {
+    width: 150px;
+    margin: 0 2rem;
+}
+
+.activity-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Right Sidebar Style */
+.upcoming-section {
+    margin-top: 2rem;
+}
+
+.upcoming-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.upcoming-tag {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--primary-purple);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+/* Flask Admin Base Overrides to fit Bruddle */
+#admin-navbar { display: none; } /* We use our own sidebar */
+
+.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-dark);
+}
+
+/* Modern Badge Styles */
+.modern-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-login { background: rgba(139, 92, 246, 0.15); color: var(--primary-purple); }
+.badge-register { background: rgba(16, 185, 129, 0.15); color: var(--success-green); }
+.badge-other { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
+.badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success-green); }
+.badge-secondary { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--error-red); }
+
+/* Modern Data Table Styling */
+.table-responsive {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table thead th {
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    padding: 1rem;
+}
+
+.table tbody tr {
+    transition: all 0.2s;
+    background: white;
+}
+
+.table tbody tr:hover {
+    background: #f9fafb;
+    transform: translateY(-2px);
+}
+
+.table td {
+    padding: 1.25rem 1rem;
+    vertical-align: middle;
+    border-top: 1px solid #f3f4f6;
+    font-weight: 500;
+}
+
+/* Premium CRUD Buttons */
+.list-buttons-column {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-start;
+    border-top: 1px solid #f3f4f6 !important;
+}
+
+.list-buttons-column a, 
+.list-buttons-column form button {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+/* Edit Button Styling */
+.list-buttons-column a[title*="Edit"],
+.list-buttons-column a .fa-pencil-alt,
+.list-buttons-column a .fa-pencil {
+    background-color: rgba(139, 92, 246, 0.1);
+    color: var(--primary-purple);
+}
+
+.list-buttons-column a[title*="Edit"]:hover {
+    background-color: var(--primary-purple);
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Delete Button Styling */
+.list-buttons-column form button[title*="Delete"],
+.list-buttons-column form button .fa-trash {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error-red);
+}
+
+.list-buttons-column form button:hover {
+    background-color: var(--error-red);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Add Text Labels to Icons via CSS */
+.list-buttons-column a[title*="Edit"] i::after,
+.list-buttons-column a[title*="Edit"] span::after {
+    content: "Edit";
+    margin-left: 8px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.list-buttons-column form button[title*="Delete"] i::after,
+.list-buttons-column form button[title*="Delete"] span::after {
+    content: "Delete";
+    margin-left: 8px;
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Filters & Search Styling */
+.filters-content, .search-form {
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.btn-primary {
+    background-color: var(--primary-purple);
+    border: none;
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #7c3aed;
+}

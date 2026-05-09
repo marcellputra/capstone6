@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../auth/controller/auth_controller.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -289,57 +290,66 @@ class _ProfileViewState extends State<ProfileView>
                   const SizedBox(height: 24),
 
                   // Avatar
-                  Stack(
-                    children: [
-                      Container(
-                        width: 88,
-                        height: 88,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          image: const DecorationImage(
-                            image: NetworkImage(
-                              'https://ui-avatars.com/api/?name=Budi+Santoso&background=fff&color=0B6E4F&size=200',
+                  Obx(() {
+                    final authController = Get.find<AuthController>();
+                    final name = authController.userData['name'] ?? 'Guest';
+                    final email = authController.userData['email'] ?? 'guest@email.com';
+                    final encodedName = Uri.encodeComponent(name);
+
+                    return Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://ui-avatars.com/api/?name=$encodedName&background=fff&color=0B6E4F&size=200',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                            fit: BoxFit.cover,
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGlow,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt_rounded,
+                                    size: 12, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          name,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                         ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGlow,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
-                          child: const Icon(Icons.camera_alt_rounded,
-                              size: 12, color: Colors.white),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Text(
-                    'Budi Santoso',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'budi.santoso@email.com',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 12),
 
                   // Verified badge
@@ -571,7 +581,7 @@ class _ProfileViewState extends State<ProfileView>
             ElevatedButton(
               onPressed: () {
                 Get.back();
-                Get.offAllNamed(AppRoutes.LOGIN);
+                Get.offAllNamed(AppRoutes.login);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,

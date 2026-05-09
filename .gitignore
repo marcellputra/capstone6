@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Python/Backend related
+**/venv/
+**/__pycache__/
+**/*.pyc
+.env
+smart_farmasi_backend/.env
+smart_farmasi_backend/.vscode/
+
+# AI Metadata
+.agents/
+.kilo/

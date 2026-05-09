@@ -149,85 +149,89 @@ class _RegisterViewState extends State<RegisterView>
                             const SizedBox(height: 28),
 
                             // Name
-                            _buildLabel('Nama Lengkap'),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: auth.nameController,
-                              textInputAction: TextInputAction.next,
-                              textCapitalization: TextCapitalization.words,
-                              style: _inputStyle(),
-                              decoration: const InputDecoration(
-                                hintText: 'Nama lengkap Anda',
-                                prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
-                              ),
-                            ),
+                             _buildLabel('Nama Lengkap'),
+                             const SizedBox(height: 8),
+                             TextFormField(
+                               controller: auth.nameController,
+                               textInputAction: TextInputAction.next,
+                               textCapitalization: TextCapitalization.words,
+                               style: _inputStyle(),
+                               decoration: InputDecoration(
+                                 hintText: 'Nama lengkap Anda',
+                                 prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                                 errorText: auth.nameError.value.isEmpty ? null : auth.nameError.value,
+                               ),
+                             ),
 
                             const SizedBox(height: 20),
 
                             // Email
-                            _buildLabel('Email'),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: auth.emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              style: _inputStyle(),
-                              decoration: const InputDecoration(
-                                hintText: 'contoh@email.com',
-                                prefixIcon: Icon(Icons.email_outlined, size: 20),
-                              ),
-                            ),
+                             _buildLabel('Email'),
+                             const SizedBox(height: 8),
+                             TextFormField(
+                               controller: auth.emailController,
+                               keyboardType: TextInputType.emailAddress,
+                               textInputAction: TextInputAction.next,
+                               style: _inputStyle(),
+                               decoration: InputDecoration(
+                                 hintText: 'contoh@email.com',
+                                 prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                                 errorText: auth.emailError.value.isEmpty ? null : auth.emailError.value,
+                               ),
+                             ),
 
                             const SizedBox(height: 20),
 
                             // Password
-                            _buildLabel('Password'),
-                            const SizedBox(height: 8),
-                            Obx(() => TextFormField(
-                              controller: auth.passwordController,
-                              obscureText: auth.obscurePassword.value,
-                              textInputAction: TextInputAction.next,
-                              style: _inputStyle(),
-                              decoration: InputDecoration(
-                                hintText: 'Min. 8 karakter',
-                                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                                suffixIcon: GestureDetector(
-                                  onTap: auth.togglePasswordVisibility,
-                                  child: Icon(
-                                    auth.obscurePassword.value
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            )),
+                             _buildLabel('Password'),
+                             const SizedBox(height: 8),
+                             Obx(() => TextFormField(
+                               controller: auth.passwordController,
+                               obscureText: auth.obscurePassword.value,
+                               textInputAction: TextInputAction.next,
+                               style: _inputStyle(),
+                               decoration: InputDecoration(
+                                 hintText: 'Min. 8 karakter',
+                                 prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                                 suffixIcon: GestureDetector(
+                                   onTap: auth.togglePasswordVisibility,
+                                   child: Icon(
+                                     auth.obscurePassword.value
+                                         ? Icons.visibility_off_outlined
+                                         : Icons.visibility_outlined,
+                                     size: 20,
+                                   ),
+                                 ),
+                                 errorText: auth.passwordError.value.isEmpty ? null : auth.passwordError.value,
+                               ),
+                             )),
 
                             const SizedBox(height: 20),
 
                             // Confirm Password
-                            _buildLabel('Konfirmasi Password'),
-                            const SizedBox(height: 8),
-                            Obx(() => TextFormField(
-                              controller: auth.confirmController,
-                              obscureText: auth.obscureConfirm.value,
-                              textInputAction: TextInputAction.done,
-                              style: _inputStyle(),
-                              onFieldSubmitted: (_) => _handleRegister(),
-                              decoration: InputDecoration(
-                                hintText: 'Ulangi password',
-                                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                                suffixIcon: GestureDetector(
-                                  onTap: auth.toggleConfirmVisibility,
-                                  child: Icon(
-                                    auth.obscureConfirm.value
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            )),
+                             _buildLabel('Konfirmasi Password'),
+                             const SizedBox(height: 8),
+                             Obx(() => TextFormField(
+                               controller: auth.confirmController,
+                               obscureText: auth.obscureConfirm.value,
+                               textInputAction: TextInputAction.done,
+                               style: _inputStyle(),
+                               onFieldSubmitted: (_) => _handleRegister(),
+                               decoration: InputDecoration(
+                                 hintText: 'Ulangi password',
+                                 prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                                 suffixIcon: GestureDetector(
+                                   onTap: auth.toggleConfirmVisibility,
+                                   child: Icon(
+                                     auth.obscureConfirm.value
+                                         ? Icons.visibility_off_outlined
+                                         : Icons.visibility_outlined,
+                                     size: 20,
+                                   ),
+                                 ),
+                                 errorText: auth.confirmError.value.isEmpty ? null : auth.confirmError.value,
+                               ),
+                             )),
 
                             const SizedBox(height: 24),
 

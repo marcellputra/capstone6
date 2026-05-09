@@ -1,0 +1,84 @@
+{% extends 'admin/base.html' %}
+
+{% block head_css %}
+    {{ super() }}
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/admin_custom.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block page_body %}
+    <!-- Sidebar Navigation -->
+    <div class="admin-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-pills"></i> Smart<span>Pharmacy</span>
+        </div>
+
+        <div class="nav-section-title">Main Menu</div>
+        <a href="{{ url_for('admin.index') }}" class="sidebar-nav-link {{ 'active' if request.endpoint == 'admin.index' else '' }}">
+            <span><i class="fas fa-th-large"></i> Dashboard</span>
+        </a>
+        <a href="{{ url_for('user.index_view') }}" class="sidebar-nav-link {{ 'active' if request.endpoint == 'user.index_view' else '' }}">
+            <span><i class="fas fa-users"></i> Patient Database</span>
+        </a>
+        <a href="{{ url_for('useractivity.index_view') }}" class="sidebar-nav-link {{ 'active' if request.endpoint == 'useractivity.index_view' else '' }}">
+            <span><i class="fas fa-history"></i> Activity Logs</span>
+        </a>
+
+        <div class="nav-section-title">Smart Features</div>
+        <a href="#" class="sidebar-nav-link">
+            <span><i class="fas fa-qrcode"></i> Medication Scans</span>
+            <span class="nav-badge">NEW</span>
+        </a>
+        <a href="#" class="sidebar-nav-link">
+            <span><i class="fas fa-stethoscope"></i> Symptom Checks</span>
+        </a>
+        <a href="#" class="sidebar-nav-link">
+            <span><i class="fas fa-robot"></i> AI Chatbot Logs</span>
+        </a>
+        <a href="#" class="sidebar-nav-link">
+            <span><i class="fas fa-prescription-bottle-alt"></i> Drug Database</span>
+        </a>
+        
+        <div style="position: absolute; bottom: 2rem; width: calc(100% - 3rem);">
+             <a href="#" class="sidebar-nav-link">
+                <span><i class="fas fa-cog"></i> System Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content-wrapper">
+        <header class="dashboard-header">
+            <div class="header-title">
+                <h1>Dashboard</h1>
+            </div>
+            <div class="header-actions">
+                <i class="fas fa-search text-muted"></i>
+                <i class="fas fa-bell text-muted"></i>
+                <button class="tab-btn" style="background: #f3f4f6; color: black; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-cloud-download-alt"></i> Export Report
+                </button>
+                <button class="btn-create-new">
+                    <i class="fas fa-plus-circle"></i> Add Patient
+                </button>
+            </div>
+        </header>
+
+        {% block body %}{% endblock %}
+
+        <footer class="mt-5 pt-4 border-top">
+            <div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem; font-weight: 700;">
+                <div class="d-flex gap-4">
+                    <span>English <i class="fas fa-chevron-down ml-1"></i></span>
+                    <span>Privacy Policy</span>
+                    <span>Developer API</span>
+                </div>
+                <div>
+                    <i class="fas fa-cog mr-3"></i>
+                    <i class="fas fa-moon"></i>
+                </div>
+            </div>
+        </footer>
+    </div>
+{% endblock %}

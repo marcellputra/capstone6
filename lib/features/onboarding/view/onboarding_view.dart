@@ -81,7 +81,7 @@ class _OnboardingViewState extends State<OnboardingView>
         curve: Curves.easeInOutCubic,
       );
     } else {
-      Get.offAllNamed(AppRoutes.LOGIN);
+      Get.offAllNamed(AppRoutes.login);
     }
   }
 
@@ -99,7 +99,7 @@ class _OnboardingViewState extends State<OnboardingView>
               child: Padding(
                 padding: const EdgeInsets.only(right: 20, top: 12),
                 child: TextButton(
-                  onPressed: () => Get.offAllNamed(AppRoutes.LOGIN),
+                  onPressed: () => Get.offAllNamed(AppRoutes.login),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     backgroundColor: AppColors.primaryLighter,
