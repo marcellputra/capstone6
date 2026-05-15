@@ -2,10 +2,10 @@
   <img src="assets/smart_farmasi_banner.png" alt="Smart Farmasi Banner" width="100%">
 </p>
 
-# 💊 Smart Farmasi (Cureva)
+# 💊 Smart Farmasi
 > **Your Intelligent Health & Pharmacy Companion**
 
-Smart Farmasi (Cureva) is a state-of-the-art HealthTech application designed to revolutionize how users interact with medical information, manage their health profiles, and stay informed about global health trends. Built with a premium aesthetic and powered by modern AI, it bridges the gap between technology and personal healthcare.
+Smart Farmasi is a state-of-the-art HealthTech application designed to revolutionize how users interact with medical information, manage their health profiles, and stay informed about global health trends. Built with a premium aesthetic and powered by modern AI, it bridges the gap between technology and personal healthcare.
 
 ---
 
