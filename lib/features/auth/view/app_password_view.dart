@@ -113,7 +113,9 @@ class _AppPasswordViewState extends State<AppPasswordView> {
 
   Future<void> _sendOtp() async {
     setState(() => _isLoading = true);
-    final success = await auth.requestAppPasswordOtp(_emailController.text.trim());
+    final success = await auth.requestAppPasswordOtp(
+      _emailController.text.trim(),
+    );
     if (success && mounted) {
       _startCountdown();
     } else if (!success && mounted) {

@@ -8,7 +8,8 @@ class DiseaseNewsModel {
   final String sourceUrl;
   final String imageUrl;
   final String alertLevel; // 'low' | 'medium' | 'high'
-  final String badge; // 'Trending' | 'Wabah Global' | 'Update Terbaru' | 'Perlu Diwaspadai'
+  final String
+  badge; // 'Trending' | 'Wabah Global' | 'Update Terbaru' | 'Perlu Diwaspadai'
   final String regionScope; // 'indonesia' | 'international'
   final int trendScore;
   final String trendKeyword;
@@ -68,8 +69,19 @@ class DiseaseNewsModel {
     final dt = publishedAt ?? fetchedAt;
     if (dt == null) return 'Tidak diketahui';
     final months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des',
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Ags',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${dt.day} ${months[dt.month]} ${dt.year}';
   }

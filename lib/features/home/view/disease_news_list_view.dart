@@ -1,28 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controller/disease_news_controller.dart';
 import '../../../data/models/disease_news_model.dart';
-
-Future<void> _openExternalLink(String url) async {
-  if (url.isEmpty) return;
-  final uri = Uri.tryParse(url);
-  if (uri == null) return;
-
-  final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-  if (!opened) {
-    Get.snackbar(
-      'Gagal Membuka Link',
-      url,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-    );
-  }
-}
 
 class DiseaseNewsListView extends StatefulWidget {
   const DiseaseNewsListView({super.key});
@@ -477,7 +458,6 @@ class _NewsListCard extends StatelessWidget {
           width: 1,
         ),
       ),
-      clipBehavior: Clip.antiAlias,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),
@@ -489,20 +469,6 @@ class _NewsListCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (news.imageUrl.isNotEmpty) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 7.2,
-                      child: Image.network(
-                        news.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
                 // Badge + Source
                 Row(
                   children: [
@@ -719,20 +685,6 @@ class _NewsDetailSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (news.imageUrl.isNotEmpty) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 8.5,
-                          child: Image.network(
-                            news.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
                     // Title
                     Text(
                       news.title,
@@ -849,9 +801,16 @@ class _NewsDetailSheet extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () async {
+                          onPressed: () {
                             Get.back();
-                            await _openExternalLink(news.sourceUrl);
+                            Get.snackbar(
+                              'Link Sumber',
+                              news.sourceUrl,
+                              snackPosition: SnackPosition.BOTTOM,
+                              duration: const Duration(seconds: 4),
+                              margin: const EdgeInsets.all(16),
+                              borderRadius: 12,
+                            );
                           },
                           icon: const Icon(Icons.open_in_new_rounded, size: 16),
                           label: Text(

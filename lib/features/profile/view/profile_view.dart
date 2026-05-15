@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/api/api_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/widgets/app_ui_components.dart';
 import '../../auth/controller/auth_controller.dart';
+import '../controller/profile_controller.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -50,6 +53,11 @@ class _ProfileViewState extends State<ProfileView>
 
     _headerController.forward();
     Future.delayed(const Duration(milliseconds: 200), _listController.forward);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<ProfileController>()) {
+        Get.find<ProfileController>().loadProfile(silent: true);
+      }
+    });
   }
 
   @override
@@ -94,30 +102,34 @@ class _ProfileViewState extends State<ProfileView>
                         _MenuItem(
                           icon: Icons.person_outline_rounded,
                           label: 'Data Pribadi',
-                          subtitle: 'Nama, tanggal lahir, jenis kelamin',
+                          subtitle: 'Nama, email, dan info akun',
                           color: AppColors.primary,
                           bgColor: AppColors.primaryLighter,
+                          onTap: () => Get.toNamed(AppRoutes.editProfile),
                         ),
                         _MenuItem(
                           icon: Icons.history_rounded,
                           label: 'Riwayat Kesehatan',
-                          subtitle: '12 aktivitas tersimpan',
+                          subtitle: 'Akan terisi setelah ada aktivitas',
                           color: const Color(0xFF3B5BDB),
                           bgColor: const Color(0xFFEAF0FF),
+                          onTap: () => _showUnavailable('Riwayat kesehatan'),
                         ),
                         _MenuItem(
                           icon: Icons.medication_outlined,
                           label: 'Obat Favorit',
-                          subtitle: '5 obat disimpan',
+                          subtitle: 'Simpan obat yang sering dicari',
                           color: const Color(0xFFE67700),
                           bgColor: const Color(0xFFFFF3E0),
+                          onTap: () => _showUnavailable('Obat favorit'),
                         ),
                         _MenuItem(
                           icon: Icons.location_on_outlined,
                           label: 'Apotek Favorit',
-                          subtitle: '2 apotek disimpan',
+                          subtitle: 'Belum ada apotek tersimpan',
                           color: const Color(0xFF7B2FBE),
                           bgColor: const Color(0xFFF3E5F5),
+                          onTap: () => _showUnavailable('Apotek favorit'),
                         ),
                       ]),
 
@@ -133,6 +145,7 @@ class _ProfileViewState extends State<ProfileView>
                           subtitle: 'Kelola pengingat & pemberitahuan',
                           color: const Color(0xFF059669),
                           bgColor: const Color(0xFFECFDF5),
+                          onTap: () => _showUnavailable('Notifikasi'),
                         ),
                         _MenuItem(
                           icon: Icons.security_rounded,
@@ -152,6 +165,7 @@ class _ProfileViewState extends State<ProfileView>
                           subtitle: 'Indonesia',
                           color: const Color(0xFF6B7280),
                           bgColor: const Color(0xFFF3F4F6),
+                          onTap: () => _showUnavailable('Bahasa aplikasi'),
                         ),
                       ]),
 
@@ -167,6 +181,7 @@ class _ProfileViewState extends State<ProfileView>
                           subtitle: 'FAQ dan panduan penggunaan',
                           color: AppColors.warning,
                           bgColor: const Color(0xFFFFFBEB),
+                          onTap: () => _showUnavailable('Pusat bantuan'),
                         ),
                         _MenuItem(
                           icon: Icons.chat_outlined,
@@ -174,6 +189,7 @@ class _ProfileViewState extends State<ProfileView>
                           subtitle: 'Live chat & email support',
                           color: AppColors.info,
                           bgColor: const Color(0xFFEFF6FF),
+                          onTap: () => _showUnavailable('Hubungi kami'),
                         ),
                         _MenuItem(
                           icon: Icons.star_outline_rounded,
@@ -181,6 +197,7 @@ class _ProfileViewState extends State<ProfileView>
                           subtitle: 'Bantu tingkatkan aplikasi',
                           color: const Color(0xFFF59E0B),
                           bgColor: const Color(0xFFFFFBEB),
+                          onTap: () => _showUnavailable('Beri penilaian'),
                         ),
                       ]),
 
@@ -250,222 +267,291 @@ class _ProfileViewState extends State<ProfileView>
 
   Widget _buildProfileHeader() {
     return Container(
-      decoration: BoxDecoration(gradient: AppTheme.heroGradient),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -60,
-            right: -60,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+      color: AppColors.background,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+          child: Obx(() {
+            final authController = Get.find<AuthController>();
+            final name = authController.userData['name'] ?? 'Guest';
+            final email = authController.userData['email'] ?? 'guest@email.com';
+            final profilePictureUrl = ApiConfig.absoluteUrl(
+              authController.userData['profile_picture_url']?.toString() ?? '',
+            );
+            final isVerified = authController.userData['is_verified'] == true;
+
+            return LiquidCard(
+              borderRadius: BorderRadius.circular(30),
+              padding: const EdgeInsets.all(18),
+              gradient: AppTheme.heroGradient,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Profil Saya',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                      Expanded(
+                        child: Text(
+                          'Profil',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.edit_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
+                      IconButton(
+                        onPressed: () => Get.toNamed(AppRoutes.editProfile),
+                        color: Colors.white,
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      _buildHeaderAvatar(
+                        name: name.toString(),
+                        imageUrl: profilePictureUrl,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name.toString(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              email.toString(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withValues(alpha: 0.74),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildHeaderVerificationBadge(isVerified),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
 
-                  const SizedBox(height: 24),
+  Widget _buildHeaderAvatar({required String name, required String imageUrl}) {
+    return Container(
+      width: 68,
+      height: 68,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  _buildHeaderInitials(name),
+            )
+          : _buildHeaderInitials(name),
+    );
+  }
 
-                  // Avatar
-                  Obx(() {
-                    final authController = Get.find<AuthController>();
-                    final name = authController.userData['name'] ?? 'Guest';
-                    final email =
-                        authController.userData['email'] ?? 'guest@email.com';
-                    final encodedName = Uri.encodeComponent(name);
+  Widget _buildHeaderInitials(String name) {
+    return Center(
+      child: Text(
+        _initials(name),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
 
-                    return Column(
-                      children: [
-                        Stack(
-                          children: [
-                            Container(
-                              width: 88,
-                              height: 88,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    'https://ui-avatars.com/api/?name=$encodedName&background=fff&color=0B6E4F&size=200',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGlow,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt_rounded,
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          name,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          email,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-                  const SizedBox(height: 12),
+  Widget _buildHeaderVerificationBadge(bool isVerified) {
+    final foreground = isVerified ? AppColors.primary : const Color(0xFF92400E);
+    final background = isVerified ? Colors.white : const Color(0xFFFFFBEB);
+    final border = isVerified
+        ? Colors.white.withValues(alpha: 0.85)
+        : const Color(0xFFFDE68A);
 
-                  // Verified badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isVerified ? Icons.verified_rounded : Icons.warning_amber_rounded,
+            size: 14,
+            color: foreground,
+          ),
+          const SizedBox(width: 5),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              isVerified ? 'Akun terverifikasi' : 'Belum terverifikasi',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: foreground,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'SF';
+    final first = parts.first[0];
+    final second = parts.length > 1 && parts[1].isNotEmpty ? parts[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+
+  Widget _buildStatsRow() {
+    return LiquidCard(
+      borderRadius: BorderRadius.circular(26),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ringkasan akun',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: AppColors.ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const AppInfoBanner(
+            icon: Icons.history_toggle_off_rounded,
+            color: AppColors.primary,
+            message:
+                'Aktivitas kesehatan, scan obat, dan apotek favorit akan muncul setelah tersinkron dengan backend.',
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  'Cek gejala',
+                  'Mulai analisis',
+                  Icons.health_and_safety_rounded,
+                  () => Get.toNamed(AppRoutes.symptom),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStatItem(
+                  'Scan obat',
+                  'Baca label',
+                  Icons.document_scanner_rounded,
+                  () => Get.toNamed(AppRoutes.scan),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    String title,
+    String label,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.verified_rounded,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Akun Terverifikasi',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                  ),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsRow() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('12', 'Analisis', Icons.medical_information_rounded),
-          _buildDivider(),
-          _buildStatItem('5', 'Scan Obat', Icons.document_scanner_rounded),
-          _buildDivider(),
-          _buildStatItem('3', 'Apotek', Icons.local_pharmacy_rounded),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, size: 20, color: AppColors.primary),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
-          ),
+          ],
         ),
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _buildDivider() {
-    return Container(height: 50, width: 1, color: const Color(0xFFF0F0F0));
+    return Container(height: 1, color: AppColors.outline);
+  }
+
+  void _showUnavailable(String title) {
+    Get.snackbar(
+      title,
+      'Fitur ini akan aktif setelah data dan layanan pendukung tersedia.',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 14,
+    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -483,8 +569,9 @@ class _ProfileViewState extends State<ProfileView>
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.outline),
+        boxShadow: AppTheme.softShadow,
       ),
       child: Column(
         children: items.asMap().entries.map((e) {
@@ -493,8 +580,7 @@ class _ProfileViewState extends State<ProfileView>
           return Column(
             children: [
               _buildMenuItem(item),
-              if (index < items.length - 1)
-                const Divider(height: 1, indent: 64, endIndent: 16),
+              if (index < items.length - 1) _buildDivider(),
             ],
           );
         }).toList(),
@@ -503,10 +589,11 @@ class _ProfileViewState extends State<ProfileView>
   }
 
   Widget _buildMenuItem(_MenuItem item) {
-    return GestureDetector(
+    return InkWell(
       onTap: item.onTap,
+      borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Row(
           children: [
             Container(
@@ -514,11 +601,11 @@ class _ProfileViewState extends State<ProfileView>
               height: 42,
               decoration: BoxDecoration(
                 color: item.bgColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(item.icon, color: item.color, size: 20),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 13),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,7 +614,7 @@ class _ProfileViewState extends State<ProfileView>
                     item.label,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -535,8 +622,12 @@ class _ProfileViewState extends State<ProfileView>
                     const SizedBox(height: 2),
                     Text(
                       item.subtitle!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.textTertiary,
                       ),
                     ),
@@ -545,8 +636,8 @@ class _ProfileViewState extends State<ProfileView>
               ),
             ),
             const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
+              Icons.chevron_right_rounded,
+              size: 22,
               color: AppColors.textTertiary,
             ),
           ],
@@ -561,12 +652,27 @@ class _ProfileViewState extends State<ProfileView>
         authController.userData['has_password'] != true;
   }
 
-  void _showSecuritySheet() {
+  BuildContext get _rootContext => Get.context ?? context;
+
+  Future<void> _waitForModalTeardown() async {
+    await Future<void>.delayed(const Duration(milliseconds: 240));
+  }
+
+  void _disposeControllersAfterFrame(List<TextEditingController> controllers) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final controller in controllers) {
+        controller.dispose();
+      }
+    });
+  }
+
+  Future<void> _showSecuritySheet() async {
     final isGoogleWithoutPassword = _isGoogleWithoutPassword();
-    showModalBottomSheet(
-      context: context,
+    final action = await showModalBottomSheet<String>(
+      context: _rootContext,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -608,10 +714,8 @@ class _ProfileViewState extends State<ProfileView>
               icon: Icons.alternate_email_rounded,
               title: 'Ganti Email',
               subtitle: 'Verifikasi email baru dengan OTP',
-              onTap: () {
-                Get.back();
-                _showChangeEmailSheet();
-              },
+              onTap: () =>
+                  Navigator.of(sheetContext, rootNavigator: true).pop('email'),
             ),
             const SizedBox(height: 12),
             _buildSecurityAction(
@@ -622,24 +726,45 @@ class _ProfileViewState extends State<ProfileView>
               subtitle: isGoogleWithoutPassword
                   ? 'Login bisa pakai Google atau email/password'
                   : 'Konfirmasi password baru dengan OTP',
-              onTap: () {
-                Get.back();
-                if (isGoogleWithoutPassword) {
-                  final email = Get.find<AuthController>().userData['email']
-                      ?.toString();
-                  Get.toNamed(
-                    AppRoutes.appPassword,
-                    arguments: {'email': email ?? ''},
-                  );
-                } else {
-                  _showChangePasswordSheet();
-                }
-              },
+              onTap: () => Navigator.of(
+                sheetContext,
+                rootNavigator: true,
+              ).pop('password'),
+            ),
+            const SizedBox(height: 12),
+            _buildSecurityAction(
+              icon: Icons.delete_forever_rounded,
+              title: 'Hapus Akun',
+              subtitle: 'Nonaktifkan & jadwalkan penghapusan akun',
+              iconColor: AppColors.error,
+              bgColor: const Color(0xFFFEF2F2),
+              onTap: () =>
+                  Navigator.of(sheetContext, rootNavigator: true).pop('delete'),
             ),
           ],
         ),
       ),
     );
+
+    if (!mounted || action == null) return;
+    await _waitForModalTeardown();
+    if (!mounted) return;
+    if (action == 'email') {
+      _showChangeEmailSheet();
+      return;
+    }
+    if (action == 'password') {
+      if (isGoogleWithoutPassword) {
+        final email = Get.find<AuthController>().userData['email']?.toString();
+        Get.toNamed(AppRoutes.appPassword, arguments: {'email': email ?? ''});
+      } else {
+        _showChangePasswordSheet();
+      }
+      return;
+    }
+    if (action == 'delete') {
+      _showDeleteAccountSheet();
+    }
   }
 
   Widget _buildSecurityAction({
@@ -647,6 +772,8 @@ class _ProfileViewState extends State<ProfileView>
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? bgColor,
   }) {
     return InkWell(
       onTap: onTap,
@@ -664,10 +791,10 @@ class _ProfileViewState extends State<ProfileView>
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.primaryLighter,
+                color: bgColor ?? AppColors.primaryLighter,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primary),
+              child: Icon(icon, color: iconColor ?? AppColors.primary),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -704,6 +831,285 @@ class _ProfileViewState extends State<ProfileView>
     );
   }
 
+  void _showDeleteAccountSheet() {
+    final authController = Get.find<AuthController>();
+    final bool hasPassword = authController.userData['has_password'] == true;
+
+    final passwordCtrl = TextEditingController();
+    final otpCtrl = TextEditingController();
+    var otpSent = false;
+    var loading = false;
+    var obscurePassword = true;
+    var cooldownSeconds = 0;
+    Timer? resendTimer;
+    var sheetOpen = true;
+
+    showModalBottomSheet(
+      context: _rootContext,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          void safeSetSheetState(VoidCallback fn) {
+            if (!sheetOpen || !mounted || !context.mounted) return;
+            setSheetState(fn);
+          }
+
+          void startCooldown() {
+            cooldownSeconds = 180;
+            resendTimer?.cancel();
+            resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+              if (cooldownSeconds > 0) {
+                safeSetSheetState(() => cooldownSeconds--);
+              } else {
+                timer.cancel();
+              }
+            });
+          }
+
+          Future<void> requestOtp() async {
+            safeSetSheetState(() => loading = true);
+            final success = await authController.requestDeleteAccountOtp();
+            if (success) {
+              safeSetSheetState(() {
+                otpSent = true;
+                otpCtrl.clear();
+              });
+              startCooldown();
+            }
+            safeSetSheetState(() => loading = false);
+          }
+
+          Future<void> confirmDeletion() async {
+            if (hasPassword && passwordCtrl.text.isEmpty) {
+              Get.snackbar(
+                'Password Wajib',
+                'Masukkan password Anda untuk konfirmasi.',
+                backgroundColor: Colors.red.shade600,
+                colorText: Colors.white,
+              );
+              return;
+            }
+            if (!hasPassword && !otpSent) {
+              await requestOtp();
+              return;
+            }
+            if (!hasPassword && otpCtrl.text.length < 6) {
+              Get.snackbar(
+                'OTP Tidak Valid',
+                'Masukkan 6 digit kode OTP.',
+                backgroundColor: Colors.red.shade600,
+                colorText: Colors.white,
+              );
+              return;
+            }
+
+            showDialog<void>(
+              context: context,
+              useRootNavigator: true,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('Konfirmasi Terakhir'),
+                content: const Text(
+                  'Apakah Anda benar-benar yakin ingin menonaktifkan akun? Anda memiliki 30 hari untuk membatalkan tindakan ini.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(dialogContext, rootNavigator: true).pop(),
+                    child: const Text('Batal'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final deletePassword = hasPassword
+                          ? passwordCtrl.text
+                          : null;
+                      final deleteOtp = !hasPassword ? otpCtrl.text : null;
+                      Navigator.of(dialogContext, rootNavigator: true).pop();
+                      await Future<void>.delayed(Duration.zero);
+                      if (context.mounted) {
+                        Navigator.of(context, rootNavigator: true).pop();
+                      }
+                      await _waitForModalTeardown();
+                      await authController.confirmDeleteAccount(
+                        password: deletePassword,
+                        otpCode: deleteOtp,
+                      );
+                    },
+                    child: const Text(
+                      'Ya, Hapus',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return _buildActionSheet(
+            sheetContext: context,
+            title: 'Hapus Akun',
+            subtitle:
+                'Proses ini akan menonaktifkan akun Anda segera. Data akan dihapus permanen setelah masa tenggang 30 hari berakhir.',
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4E5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFE5C4)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange.shade800,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Peringatan Penting!',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Semua data medis & riwayat akan ditangguhkan.\n'
+                      '• Akun tidak akan dapat dicari atau diakses.\n'
+                      '• Anda punya 30 hari untuk mengaktifkan kembali dengan login kembali.',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        height: 1.6,
+                        color: Colors.orange.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (hasPassword) ...[
+                TextFormField(
+                  controller: passwordCtrl,
+                  obscureText: obscurePassword,
+                  enabled: !loading,
+                  decoration: InputDecoration(
+                    labelText: 'Konfirmasi Password',
+                    hintText: 'Masukkan password akun Anda',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                    suffixIcon: IconButton(
+                      onPressed: () => safeSetSheetState(
+                        () => obscurePassword = !obscurePassword,
+                      ),
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                if (otpSent) ...[
+                  TextFormField(
+                    controller: otpCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 6,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 8,
+                    ),
+                    decoration: const InputDecoration(
+                      counterText: '',
+                      labelText: 'Kode OTP Konfirmasi',
+                      prefixIcon: Icon(Icons.password_rounded),
+                    ),
+                  ),
+                ] else
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'Karena Anda login via Google tanpa password, kami akan mengirimkan kode OTP konfirmasi ke email Anda sebelum penghapusan akun.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: loading ? null : confirmDeletion,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                icon: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(
+                        hasPassword
+                            ? Icons.delete_forever_rounded
+                            : (otpSent
+                                  ? Icons.check_circle_outline
+                                  : Icons.send_rounded),
+                      ),
+                label: Text(
+                  hasPassword
+                      ? 'Hapus Akun Sekarang'
+                      : (otpSent
+                            ? 'Verifikasi & Hapus Akun'
+                            : 'Kirim OTP Penghapusan'),
+                ),
+              ),
+              if (!hasPassword && otpSent) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: (loading || cooldownSeconds > 0)
+                      ? null
+                      : requestOtp,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(
+                    cooldownSeconds > 0
+                        ? 'Kirim Ulang (${cooldownSeconds ~/ 60}:${(cooldownSeconds % 60).toString().padLeft(2, '0')})'
+                        : 'Kirim Ulang OTP',
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    ).whenComplete(() {
+      sheetOpen = false;
+      resendTimer?.cancel();
+      _disposeControllersAfterFrame([passwordCtrl, otpCtrl]);
+    });
+  }
+
   void _showChangeEmailSheet() {
     final authController = Get.find<AuthController>();
     final emailCtrl = TextEditingController();
@@ -714,19 +1120,26 @@ class _ProfileViewState extends State<ProfileView>
     var obscurePassword = true;
     var cooldownSeconds = 0;
     Timer? resendTimer;
+    var sheetOpen = true;
 
     showModalBottomSheet(
-      context: context,
+      context: _rootContext,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          void safeSetSheetState(VoidCallback fn) {
+            if (!sheetOpen || !mounted || !context.mounted) return;
+            setSheetState(fn);
+          }
+
           void startCooldown() {
             cooldownSeconds = 180;
             resendTimer?.cancel();
             resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
               if (cooldownSeconds > 0) {
-                setSheetState(() => cooldownSeconds--);
+                safeSetSheetState(() => cooldownSeconds--);
               } else {
                 timer.cancel();
               }
@@ -734,33 +1147,39 @@ class _ProfileViewState extends State<ProfileView>
           }
 
           Future<void> requestOtp() async {
-            setSheetState(() => loading = true);
+            safeSetSheetState(() => loading = true);
             final success = await authController.requestEmailChangeOtp(
               newEmail: emailCtrl.text,
               currentPassword: passwordCtrl.text,
             );
             if (success) {
-              setSheetState(() {
+              safeSetSheetState(() {
                 otpSent = true;
                 otpCtrl.clear();
                 obscurePassword = true;
               });
               startCooldown();
             }
-            setSheetState(() => loading = false);
+            safeSetSheetState(() => loading = false);
           }
 
           Future<void> confirmOtp() async {
-            setSheetState(() => loading = true);
+            safeSetSheetState(() => loading = true);
             final success = await authController.confirmEmailChange(
               newEmail: emailCtrl.text,
               otp: otpCtrl.text,
             );
-            setSheetState(() => loading = false);
-            if (success) Get.back();
+            if (success) {
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              return;
+            }
+            safeSetSheetState(() => loading = false);
           }
 
           return _buildActionSheet(
+            sheetContext: context,
             title: 'Ganti Email',
             subtitle: 'OTP akan dikirim ke email baru Anda.',
             children: [
@@ -782,8 +1201,10 @@ class _ProfileViewState extends State<ProfileView>
                   labelText: 'Password Saat Ini',
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
-                    onPressed: (!otpSent && !loading) 
-                        ? () => setSheetState(() => obscurePassword = !obscurePassword)
+                    onPressed: (!otpSent && !loading)
+                        ? () => safeSetSheetState(
+                            () => obscurePassword = !obscurePassword,
+                          )
                         : null,
                     icon: Icon(
                       obscurePassword
@@ -836,11 +1257,15 @@ class _ProfileViewState extends State<ProfileView>
               if (otpSent) ...[
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
-                  onPressed: (loading || cooldownSeconds > 0) ? null : requestOtp,
+                  onPressed: (loading || cooldownSeconds > 0)
+                      ? null
+                      : requestOtp,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: Text(cooldownSeconds > 0 
-                      ? 'Kirim Ulang (${cooldownSeconds ~/ 60}:${(cooldownSeconds % 60).toString().padLeft(2, '0')})'
-                      : 'Resend Code'),
+                  label: Text(
+                    cooldownSeconds > 0
+                        ? 'Kirim Ulang (${cooldownSeconds ~/ 60}:${(cooldownSeconds % 60).toString().padLeft(2, '0')})'
+                        : 'Resend Code',
+                  ),
                 ),
               ],
             ],
@@ -848,10 +1273,9 @@ class _ProfileViewState extends State<ProfileView>
         },
       ),
     ).whenComplete(() {
+      sheetOpen = false;
       resendTimer?.cancel();
-      emailCtrl.dispose();
-      passwordCtrl.dispose();
-      otpCtrl.dispose();
+      _disposeControllersAfterFrame([emailCtrl, passwordCtrl, otpCtrl]);
     });
   }
 
@@ -868,19 +1292,26 @@ class _ProfileViewState extends State<ProfileView>
     var obscureConfirm = true;
     var cooldownSeconds = 0;
     Timer? resendTimer;
+    var sheetOpen = true;
 
     showModalBottomSheet(
-      context: context,
+      context: _rootContext,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          void safeSetSheetState(VoidCallback fn) {
+            if (!sheetOpen || !mounted || !context.mounted) return;
+            setSheetState(fn);
+          }
+
           void startCooldown() {
             cooldownSeconds = 180;
             resendTimer?.cancel();
             resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
               if (cooldownSeconds > 0) {
-                setSheetState(() => cooldownSeconds--);
+                safeSetSheetState(() => cooldownSeconds--);
               } else {
                 timer.cancel();
               }
@@ -888,14 +1319,14 @@ class _ProfileViewState extends State<ProfileView>
           }
 
           Future<void> requestOtp() async {
-            setSheetState(() => loading = true);
+            safeSetSheetState(() => loading = true);
             final success = await authController.requestPasswordChangeOtp(
               currentPassword: currentCtrl.text,
               newPassword: newCtrl.text,
               newPasswordConfirmation: confirmCtrl.text,
             );
             if (success) {
-              setSheetState(() {
+              safeSetSheetState(() {
                 otpSent = true;
                 otpCtrl.clear();
                 obscureCurrent = true;
@@ -904,22 +1335,28 @@ class _ProfileViewState extends State<ProfileView>
               });
               startCooldown();
             }
-            setSheetState(() => loading = false);
+            safeSetSheetState(() => loading = false);
           }
 
           Future<void> confirmOtp() async {
-            setSheetState(() => loading = true);
+            safeSetSheetState(() => loading = true);
             final success = await authController.confirmPasswordChange(
               currentPassword: currentCtrl.text,
               newPassword: newCtrl.text,
               newPasswordConfirmation: confirmCtrl.text,
               otp: otpCtrl.text,
             );
-            setSheetState(() => loading = false);
-            if (success) Get.back();
+            if (success) {
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              return;
+            }
+            safeSetSheetState(() => loading = false);
           }
 
           return _buildActionSheet(
+            sheetContext: context,
             title: 'Ganti Password',
             subtitle:
                 'Masukkan password lama, password baru, lalu verifikasi OTP.',
@@ -930,7 +1367,7 @@ class _ProfileViewState extends State<ProfileView>
                 obscure: obscureCurrent,
                 enabled: !otpSent && !loading,
                 onToggle: () =>
-                    setSheetState(() => obscureCurrent = !obscureCurrent),
+                    safeSetSheetState(() => obscureCurrent = !obscureCurrent),
               ),
               const SizedBox(height: 14),
               _buildPasswordField(
@@ -938,7 +1375,8 @@ class _ProfileViewState extends State<ProfileView>
                 label: 'Password Baru',
                 obscure: obscureNew,
                 enabled: !otpSent && !loading,
-                onToggle: () => setSheetState(() => obscureNew = !obscureNew),
+                onToggle: () =>
+                    safeSetSheetState(() => obscureNew = !obscureNew),
               ),
               const SizedBox(height: 14),
               _buildPasswordField(
@@ -947,7 +1385,7 @@ class _ProfileViewState extends State<ProfileView>
                 obscure: obscureConfirm,
                 enabled: !otpSent && !loading,
                 onToggle: () =>
-                    setSheetState(() => obscureConfirm = !obscureConfirm),
+                    safeSetSheetState(() => obscureConfirm = !obscureConfirm),
               ),
               if (otpSent) ...[
                 const SizedBox(height: 14),
@@ -992,11 +1430,15 @@ class _ProfileViewState extends State<ProfileView>
               if (otpSent) ...[
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
-                  onPressed: (loading || cooldownSeconds > 0) ? null : requestOtp,
+                  onPressed: (loading || cooldownSeconds > 0)
+                      ? null
+                      : requestOtp,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: Text(cooldownSeconds > 0 
-                      ? 'Kirim Ulang (${cooldownSeconds ~/ 60}:${(cooldownSeconds % 60).toString().padLeft(2, '0')})'
-                      : 'Resend Code'),
+                  label: Text(
+                    cooldownSeconds > 0
+                        ? 'Kirim Ulang (${cooldownSeconds ~/ 60}:${(cooldownSeconds % 60).toString().padLeft(2, '0')})'
+                        : 'Resend Code',
+                  ),
                 ),
               ],
             ],
@@ -1004,22 +1446,26 @@ class _ProfileViewState extends State<ProfileView>
         },
       ),
     ).whenComplete(() {
+      sheetOpen = false;
       resendTimer?.cancel();
-      currentCtrl.dispose();
-      newCtrl.dispose();
-      confirmCtrl.dispose();
-      otpCtrl.dispose();
+      _disposeControllersAfterFrame([
+        currentCtrl,
+        newCtrl,
+        confirmCtrl,
+        otpCtrl,
+      ]);
     });
   }
 
   Widget _buildActionSheet({
+    required BuildContext sheetContext,
     required String title,
     required String subtitle,
     required List<Widget> children,
   }) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
       ),
       child: Container(
         decoration: const BoxDecoration(
@@ -1152,7 +1598,7 @@ class _ProfileViewState extends State<ProfileView>
             ElevatedButton(
               onPressed: () {
                 Get.back();
-                Get.offAllNamed(AppRoutes.login);
+                Get.find<AuthController>().logout();
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text('Ya, Keluar'),

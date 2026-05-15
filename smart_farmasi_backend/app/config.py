@@ -6,11 +6,29 @@ try:
 except ImportError:
     pass
 
-SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@127.0.0.1/smart_farmasi_db'
+SECRET_KEY = os.environ.get('SECRET_KEY')
+SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key-change-in-production'
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 NEWS_API_KEY = os.environ.get('NEWS_API_KEY') or ''
+
+GOOGLE_WEB_CLIENT_ID = (
+    os.environ.get('GOOGLE_WEB_CLIENT_ID')
+    or os.environ.get('GOOGLE_CLIENT_ID')
+    or '691571373089-t2r3oajabh78af9r1veh4oc5hhb4ebjg.apps.googleusercontent.com'
+)
+GOOGLE_ANDROID_CLIENT_ID = (
+    os.environ.get('GOOGLE_ANDROID_CLIENT_ID')
+    or '691571373089-0bel2hsakmfo8u8841oljlc0iruhk8q1.apps.googleusercontent.com'
+)
+GOOGLE_CLIENT_IDS = [
+    client_id.strip()
+    for client_id in (
+        os.environ.get('GOOGLE_CLIENT_IDS')
+        or f'{GOOGLE_WEB_CLIENT_ID},{GOOGLE_ANDROID_CLIENT_ID}'
+    ).split(',')
+    if client_id.strip()
+]
 
 MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or ''
 MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or ''
@@ -28,4 +46,15 @@ OTP_BYPASS_EMAILS = {
     email.strip().lower()
     for email in (os.environ.get('OTP_BYPASS_EMAILS') or 'admin1@gmail.com').split(',')
     if email.strip()
+}
+
+PROFILE_PHOTO_UPLOAD_SUBDIR = os.environ.get(
+    'PROFILE_PHOTO_UPLOAD_SUBDIR',
+    'uploads/profile_pictures',
+)
+PROFILE_PHOTO_MAX_BYTES = int(os.environ.get('PROFILE_PHOTO_MAX_BYTES') or 2 * 1024 * 1024)
+PROFILE_PHOTO_ALLOWED_EXTENSIONS = {
+    ext.strip().lower()
+    for ext in (os.environ.get('PROFILE_PHOTO_ALLOWED_EXTENSIONS') or 'jpg,jpeg,png,webp').split(',')
+    if ext.strip()
 }

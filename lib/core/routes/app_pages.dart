@@ -20,6 +20,7 @@ import '../../features/scan/binding/scan_binding.dart';
 import '../../features/chatbot/view/chatbot_view.dart';
 import '../../features/chatbot/binding/chatbot_binding.dart';
 import '../../features/profile/view/profile_view.dart';
+import '../../features/profile/view/edit_profile_view.dart';
 import '../../features/profile/binding/profile_binding.dart';
 
 import 'app_routes.dart';
@@ -102,6 +103,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.profile,
       page: () => const ProfileView(),
+      binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.editProfile,
+      page: () => const EditProfileView(),
       binding: ProfileBinding(),
     ),
   ];

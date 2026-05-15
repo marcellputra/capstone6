@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_ui_components.dart';
 
 class ScanView extends StatefulWidget {
   const ScanView({super.key});
@@ -11,347 +14,264 @@ class ScanView extends StatefulWidget {
   State<ScanView> createState() => _ScanViewState();
 }
 
-class _ScanViewState extends State<ScanView> with TickerProviderStateMixin {
-  late AnimationController _laserController;
-  late AnimationController _pulseController;
-  late AnimationController _fadeController;
-  late Animation<double> _laserAnim;
-  late Animation<double> _pulseAnim;
-  late Animation<double> _fadeAnim;
-
+class _ScanViewState extends State<ScanView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scanController;
+  late final Animation<double> _scanLine;
   bool _flashOn = false;
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    _laserController = AnimationController(
+    _scanController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
-
-    _laserAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _laserController, curve: Curves.easeInOut),
+    _scanLine = CurvedAnimation(
+      parent: _scanController,
+      curve: Curves.easeInOutCubic,
     );
-    _pulseAnim = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-    _fadeAnim = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
   }
 
   @override
   void dispose() {
-    _laserController.dispose();
-    _pulseController.dispose();
-    _fadeController.dispose();
+    _scanController.dispose();
     super.dispose();
   }
 
   void _simulateScan() {
     HapticFeedback.mediumImpact();
-    _showResultSheet();
-  }
-
-  void _showResultSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => _buildResultSheet(),
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ResultSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final scanSize = size.width * 0.68;
+    final showBack = Get.currentRoute == AppRoutes.scan;
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: Stack(
-          children: [
-            // Simulated Camera Background
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [const Color(0xFF0A0A0A), const Color(0xFF1A1A2E)],
-                ),
-              ),
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 10,
-                ),
-                itemCount: 200,
-                itemBuilder: (_, _) => Container(
-                  margin: const EdgeInsets.all(1),
-                  color: Colors.white.withValues(alpha: 0.02),
-                ),
-              ),
-            ),
-
-            // Dark overlay with clear scan area
-            CustomPaint(
-              size: Size(size.width, size.height),
-              painter: _ScanOverlayPainter(
-                scanSize: scanSize,
-                cornerColor: AppColors.primaryGlow,
-              ),
-            ),
-
-            // Scan area elements
-            Center(
-              child: SizedBox(
-                width: scanSize,
-                height: scanSize,
-                child: Stack(
-                  children: [
-                    // Animated laser line
-                    AnimatedBuilder(
-                      animation: _laserAnim,
-                      builder: (context, _) {
-                        return Positioned(
-                          top: _laserAnim.value * (scanSize - 3),
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: 3,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.transparent,
-                                  AppColors.primaryGlow,
-                                  AppColors.primaryGlow,
-                                  Colors.transparent,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryGlow.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Pulsing corner glow
-                    AnimatedBuilder(
-                      animation: _pulseAnim,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _pulseAnim.value,
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.primaryGlow.withValues(alpha: 0.2),
-                            width: 2,
-                          ),
-                        ),
+      backgroundColor: const Color(0xFF121816),
+      body: Stack(
+        children: [
+          const _CameraPreviewPlaceholder(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: showBack
+                        ? _RoundScanButton(
+                            icon: Icons.arrow_back_ios_new_rounded,
+                            onTap: Get.back,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  Expanded(
+                    child: Text(
+                      'Scan obat',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  _RoundScanButton(
+                    icon: _flashOn
+                        ? Icons.flash_on_rounded
+                        : Icons.flash_off_rounded,
+                    active: _flashOn,
+                    onTap: () => setState(() => _flashOn = !_flashOn),
+                  ),
+                ],
               ),
             ),
-
-            // Top Header
-            SafeArea(
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 110),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Get.back(),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Scan Obat',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () => setState(() => _flashOn = !_flashOn),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: _flashOn
-                                  ? Colors.amber.withValues(alpha: 0.3)
-                                  : Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _flashOn
-                                    ? Colors.amber.withValues(alpha: 0.6)
-                                    : Colors.white.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Icon(
-                              _flashOn
-                                  ? Icons.flash_on_rounded
-                                  : Icons.flash_off_rounded,
-                              color: _flashOn ? Colors.amber : Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ],
+                  const StatusPill(
+                    label: 'Live label scan',
+                    color: AppColors.primaryGlow,
+                    icon: Icons.camera_alt_rounded,
+                  ),
+                  const SizedBox(height: 16),
+                  _ScanFrame(animation: _scanLine),
+                  const SizedBox(height: 22),
+                  Text(
+                    'Arahkan ke label obat',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Pastikan nama, kandungan, dan dosis terbaca jelas.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.72),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: _BottomControls(onScan: _simulateScan),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            // Guide text below scan area
-            Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: scanSize + 40),
-                child: Column(
-                  children: [
-                    Text(
-                      'Arahkan kamera ke kemasan obat',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Pastikan teks label terbaca dengan jelas',
-                      style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+class _CameraPreviewPlaceholder extends StatelessWidget {
+  const _CameraPreviewPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF10231E), Color(0xFF08110F)],
+            ),
+          ),
+        ),
+        Positioned.fill(child: CustomPaint(painter: _CameraNoisePainter())),
+        Container(color: Colors.black.withValues(alpha: 0.18)),
+      ],
+    );
+  }
+}
+
+class _ScanFrame extends StatelessWidget {
+  final Animation<double> animation;
+
+  const _ScanFrame({required this.animation});
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 250.0;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(34),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.82),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryGlow.withValues(alpha: 0.16),
+                  blurRadius: 34,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+          ),
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: AppColors.primaryGlow.withValues(alpha: 0.72),
+                  ),
                 ),
               ),
             ),
-
-            // Bottom Controls
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                top: false,
+          ),
+          AnimatedBuilder(
+            animation: animation,
+            builder: (context, _) {
+              return Positioned(
+                top: 26 + (size - 52) * animation.value,
+                left: 28,
+                right: 28,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
+                  height: 2,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.9),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildControlBtn(
-                        Icons.photo_library_rounded,
-                        'Galeri',
-                        () {},
+                    color: AppColors.primaryGlow,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGlow.withValues(alpha: 0.4),
+                        blurRadius: 12,
                       ),
-                      // Scan Button
-                      GestureDetector(
-                        onTap: _simulateScan,
-                        child: AnimatedBuilder(
-                          animation: _pulseAnim,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _pulseAnim.value,
-                              child: child,
-                            );
-                          },
-                          child: Container(
-                            width: 76,
-                            height: 76,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppTheme.primaryGradient,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryGlow.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  blurRadius: 24,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.document_scanner_rounded,
-                              color: Colors.white,
-                              size: 34,
-                            ),
-                          ),
-                        ),
-                      ),
-                      _buildControlBtn(Icons.history_rounded, 'Riwayat', () {}),
                     ],
                   ),
                 ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomControls extends StatelessWidget {
+  final VoidCallback onScan;
+
+  const _BottomControls({required this.onScan});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: LiquidCard(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
+        borderRadius: BorderRadius.circular(26),
+        glass: true,
+        color: Colors.white.withValues(alpha: 0.86),
+        child: Row(
+          children: [
+            _ControlAction(
+              icon: Icons.photo_library_outlined,
+              label: 'Galeri',
+              onTap: () => _comingSoon('Galeri'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onScan,
+                icon: const Icon(Icons.document_scanner_rounded),
+                label: const Text('Scan label'),
               ),
+            ),
+            const SizedBox(width: 12),
+            _ControlAction(
+              icon: Icons.history_rounded,
+              label: 'Riwayat',
+              onTap: () => _comingSoon('Riwayat scan'),
             ),
           ],
         ),
@@ -359,152 +279,220 @@ class _ScanViewState extends State<ScanView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildControlBtn(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
+  void _comingSoon(String title) {
+    Get.snackbar(
+      title,
+      'Fitur ini akan aktif setelah layanan pemindaian tersedia.',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 14,
+    );
+  }
+}
+
+class _ControlAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ControlAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 58,
+        height: 58,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.primary, size: 22),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textSecondary,
+              ),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildResultSheet() {
+class _RoundScanButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool active;
+
+  const _RoundScanButton({
+    required this.icon,
+    required this.onTap,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.amber.withValues(alpha: 0.22)
+              : Colors.white.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        ),
+        child: Icon(
+          icon,
+          color: active ? AppColors.amber : Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+}
+
+class _ResultSheet extends StatelessWidget {
+  const _ResultSheet();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textTertiary,
-                borderRadius: BorderRadius.circular(2),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.outline,
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLighter,
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.medication_rounded,
-                  color: AppColors.primary,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Paracetamol 500mg',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'Tablet — Generik',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '✓ Terverifikasi',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.success,
+                  child: Image.asset(
+                    'assets/illustrations/scan_guide.png',
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-          const Divider(),
-          const SizedBox(height: 16),
-
-          _buildInfoRow('Kandungan', 'Paracetamol 500mg'),
-          _buildInfoRow('Indikasi', 'Meredakan demam dan nyeri'),
-          _buildInfoRow('Dosis', '3x sehari 1 tablet setelah makan'),
-          _buildInfoRow('Pabrik', 'PT Pharma Indonesia'),
-
-          const SizedBox(height: 24),
-
-          ElevatedButton.icon(
-            onPressed: () => Get.back(),
-            icon: const Icon(Icons.info_rounded),
-            label: const Text('Lihat Detail Lengkap'),
-          ),
-
-          const SizedBox(height: 12),
-        ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const StatusPill(
+                        label: 'Label terbaca',
+                        color: AppColors.success,
+                        icon: Icons.verified_rounded,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Paracetamol 500 mg',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Tablet generik',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const _DrugInfoRow(label: 'Kandungan', value: 'Paracetamol 500 mg'),
+            const _DrugInfoRow(
+              label: 'Indikasi',
+              value: 'Membantu meredakan demam dan nyeri ringan.',
+            ),
+            const _DrugInfoRow(
+              label: 'Aturan pakai',
+              value:
+                  'Ikuti petunjuk pada kemasan atau anjuran tenaga kesehatan.',
+            ),
+            const _DrugInfoRow(label: 'Pabrik', value: 'PT Pharma Indonesia'),
+            const SizedBox(height: 10),
+            const AppInfoBanner(
+              icon: Icons.warning_amber_rounded,
+              color: AppColors.amber,
+              title: 'Periksa ulang',
+              message:
+                  'Pastikan hasil sesuai label asli. Jangan gunakan obat jika kemasan rusak atau kedaluwarsa.',
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: Get.back,
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Selesai'),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(String label, String value) {
+class _DrugInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DrugInfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 92,
             child: Text(
               label,
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textTertiary,
               ),
             ),
           ),
@@ -513,8 +501,9 @@ class _ScanViewState extends State<ScanView> with TickerProviderStateMixin {
               value,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
-                color: AppColors.textPrimary,
+                height: 1.38,
                 fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -524,124 +513,15 @@ class _ScanViewState extends State<ScanView> with TickerProviderStateMixin {
   }
 }
 
-class _ScanOverlayPainter extends CustomPainter {
-  final double scanSize;
-  final Color cornerColor;
-
-  _ScanOverlayPainter({required this.scanSize, required this.cornerColor});
-
+class _CameraNoisePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final left = centerX - scanSize / 2;
-    final top = centerY - scanSize / 2;
-    final right = centerX + scanSize / 2;
-    final bottom = centerY + scanSize / 2;
-
-    // Dark overlay
-    final overlayPaint = Paint()..color = Colors.black.withValues(alpha: 0.65);
-    final overlayPath = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(left, top, right, bottom),
-          const Radius.circular(20),
-        ),
-      )
-      ..fillType = PathFillType.evenOdd;
-    canvas.drawPath(overlayPath, overlayPaint);
-
-    // Corner brackets
-    final cornerPaint = Paint()
-      ..color = cornerColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-
-    const cornerLen = 28.0;
-    const radius = 20.0;
-
-    // Top-left
-    canvas.drawArc(
-      Rect.fromLTWH(left, top, radius * 2, radius * 2),
-      3.14159,
-      0.5 * 3.14159,
-      false,
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(left, top + radius),
-      Offset(left, top + radius + cornerLen),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(left + radius, top),
-      Offset(left + radius + cornerLen, top),
-      cornerPaint,
-    );
-
-    // Top-right
-    canvas.drawArc(
-      Rect.fromLTWH(right - radius * 2, top, radius * 2, radius * 2),
-      -0.5 * 3.14159,
-      0.5 * 3.14159,
-      false,
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(right, top + radius),
-      Offset(right, top + radius + cornerLen),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(right - radius, top),
-      Offset(right - radius - cornerLen, top),
-      cornerPaint,
-    );
-
-    // Bottom-left
-    canvas.drawArc(
-      Rect.fromLTWH(left, bottom - radius * 2, radius * 2, radius * 2),
-      0.5 * 3.14159,
-      0.5 * 3.14159,
-      false,
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(left, bottom - radius),
-      Offset(left, bottom - radius - cornerLen),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(left + radius, bottom),
-      Offset(left + radius + cornerLen, bottom),
-      cornerPaint,
-    );
-
-    // Bottom-right
-    canvas.drawArc(
-      Rect.fromLTWH(
-        right - radius * 2,
-        bottom - radius * 2,
-        radius * 2,
-        radius * 2,
-      ),
-      0,
-      0.5 * 3.14159,
-      false,
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(right, bottom - radius),
-      Offset(right, bottom - radius - cornerLen),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      Offset(right - radius, bottom),
-      Offset(right - radius - cornerLen, bottom),
-      cornerPaint,
-    );
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.035)
+      ..strokeWidth = 1;
+    for (var i = 0.0; i < size.width; i += 36) {
+      canvas.drawLine(Offset(i, 0), Offset(i + 120, size.height), paint);
+    }
   }
 
   @override

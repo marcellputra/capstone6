@@ -9,7 +9,7 @@ import 'core/bindings/initial_binding.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -17,7 +17,7 @@ void main() async {
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
   }
-  
+
   runApp(const MyApp());
 }
 

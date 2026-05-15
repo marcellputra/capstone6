@@ -25,10 +25,11 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
   final _confirmController = TextEditingController();
 
   // 6 OTP box controllers
-  final List<TextEditingController> _otpControllers =
-      List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _otpFocusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
 
   // Step: 0 = email, 1 = otp, 2 = new password
   int _step = 0;
@@ -55,10 +56,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
       duration: const Duration(milliseconds: 420),
     );
     _resetSlide();
-    Future.delayed(
-      const Duration(milliseconds: 80),
-      _slideController.forward,
-    );
+    Future.delayed(const Duration(milliseconds: 80), _slideController.forward);
   }
 
   @override
@@ -78,12 +76,13 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
   }
 
   void _resetSlide({bool fromRight = true}) {
-    _slideAnim = Tween<Offset>(
-      begin: Offset(fromRight ? 0.25 : -0.25, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
-    );
+    _slideAnim =
+        Tween<Offset>(
+          begin: Offset(fromRight ? 0.25 : -0.25, 0),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
   }
 
   Future<void> _animateToStep(int newStep, {bool forward = true}) async {
@@ -144,8 +143,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
       '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}';
 
   // ── Step 2: Verifikasi OTP ─────────────────────────────────────
-  String get _otpValue =>
-      _otpControllers.map((c) => c.text).join();
+  String get _otpValue => _otpControllers.map((c) => c.text).join();
 
   Future<void> _verifyOtp() async {
     final otp = _otpValue;
@@ -465,12 +463,15 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
           // 6-box OTP input
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(6, (i) => _OtpBox(
-              controller: _otpControllers[i],
-              focusNode: _otpFocusNodes[i],
-              onChanged: (v) => _onOtpChanged(v, i),
-              isExpired: _otpExpired,
-            )),
+            children: List.generate(
+              6,
+              (i) => _OtpBox(
+                controller: _otpControllers[i],
+                focusNode: _otpFocusNodes[i],
+                onChanged: (v) => _onOtpChanged(v, i),
+                isExpired: _otpExpired,
+              ),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -488,9 +489,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView>
             child: Row(
               children: [
                 Icon(
-                  _otpExpired
-                      ? Icons.timer_off_rounded
-                      : Icons.timer_outlined,
+                  _otpExpired ? Icons.timer_off_rounded : Icons.timer_outlined,
                   size: 20,
                   color: _otpExpired ? AppColors.error : AppColors.primary,
                 ),
@@ -731,10 +730,10 @@ class _PrimaryButton extends StatelessWidget {
       height: 54,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: (isLoading || onTap == null) ? null : AppTheme.primaryGradient,
-          color: (isLoading || onTap == null)
-              ? AppColors.surfaceVariant
-              : null,
+          gradient: (isLoading || onTap == null)
+              ? null
+              : AppTheme.primaryGradient,
+          color: (isLoading || onTap == null) ? AppColors.surfaceVariant : null,
           borderRadius: BorderRadius.circular(14),
           boxShadow: (isLoading || onTap == null)
               ? null
@@ -793,14 +792,15 @@ class _OtpBox extends StatelessWidget {
     return SizedBox(
       width: 44,
       height: 54,
-      child: RawKeyboardListener(
-        focusNode: FocusNode(),
-        onKey: (event) {
-          if (event is RawKeyDownEvent &&
+      child: Focus(
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.backspace &&
               controller.text.isEmpty) {
             onChanged('');
+            return KeyEventResult.handled;
           }
+          return KeyEventResult.ignored;
         },
         child: TextField(
           controller: controller,
@@ -821,8 +821,8 @@ class _OtpBox extends StatelessWidget {
             fillColor: isExpired
                 ? AppColors.secondaryLight
                 : filled
-                    ? AppColors.primaryLighter
-                    : AppColors.surfaceVariant,
+                ? AppColors.primaryLighter
+                : AppColors.surfaceVariant,
             contentPadding: EdgeInsets.zero,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -830,8 +830,8 @@ class _OtpBox extends StatelessWidget {
                 color: isExpired
                     ? AppColors.error.withValues(alpha: 0.4)
                     : filled
-                        ? AppColors.primary.withValues(alpha: 0.5)
-                        : const Color(0xFFE5E7EB),
+                    ? AppColors.primary.withValues(alpha: 0.5)
+                    : const Color(0xFFE5E7EB),
                 width: filled ? 1.5 : 1,
               ),
             ),

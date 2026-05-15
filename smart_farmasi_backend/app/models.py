@@ -24,6 +24,8 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     email_verified_at = db.Column(db.DateTime, nullable=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    profile_picture = db.Column(db.String(255), nullable=True)
+    deleted_at = db.Column(db.DateTime, nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

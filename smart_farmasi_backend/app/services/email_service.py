@@ -46,6 +46,12 @@ _OTP_PURPOSE_COPY = {
         'intro': 'Masukkan kode OTP berikut untuk menautkan password aplikasi ke akun Google Anda.',
         'fallback': 'Kode OTP buat password aplikasi Anda adalah:',
     },
+    'delete_account': {
+        'subject': 'PENTING: Kode OTP Penghapusan Akun Smart Farmasi',
+        'title': 'Konfirmasi Hapus Akun',
+        'intro': 'PERINGATAN KEAMANAN: Masukkan kode OTP berikut untuk menyetujui penonaktifan dan penghapusan akun Anda.',
+        'fallback': 'Kode OTP konfirmasi hapus akun Anda adalah:',
+    },
 }
 
 

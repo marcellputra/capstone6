@@ -1,379 +1,291 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../auth/controller/auth_controller.dart';
+
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_ui_components.dart';
+import '../../auth/controller/auth_controller.dart';
 import 'disease_news_section.dart';
 
-class HomeView extends StatefulWidget {
+class HomeView extends StatelessWidget {
   const HomeView({super.key});
-
-  @override
-  State<HomeView> createState() => _HomeViewState();
-}
-
-class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
-  late AnimationController _headerController;
-  late AnimationController _cardsController;
-  late Animation<Offset> _headerSlide;
-  late Animation<double> _cardsOpacity;
-
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
-
-    _headerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    _cardsController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _headerSlide = Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _headerController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _cardsOpacity = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _cardsController, curve: Curves.easeOut));
-
-    _headerController.forward();
-    Future.delayed(const Duration(milliseconds: 300), _cardsController.forward);
-  }
-
-  @override
-  void dispose() {
-    _headerController.dispose();
-    _cardsController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // ─── CUSTOM APP BAR / HEADER ───
-          SliverToBoxAdapter(
-            child: SlideTransition(
-              position: _headerSlide,
-              child: _buildHeader(context),
-            ),
-          ),
-
-          // ─── BODY CONTENT ───
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-            sliver: SliverFadeTransition(
-              opacity: _cardsOpacity,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
               sliver: SliverList(
-                delegate: SliverChildListDelegate([
+                delegate: SliverChildListDelegate.fixed([
+                  const _TopBar(),
                   const SizedBox(height: 24),
-
-                  // ─── QUICK ACTIONS ROW ───
-                  _buildSectionTitle('Layanan Cepat'),
-                  const SizedBox(height: 16),
-                  _buildQuickActions(),
-
-                  const SizedBox(height: 28),
-
-                  // ─── HERO BANNER ───
-                  _buildHeroBanner(),
-
-                  const SizedBox(height: 28),
-
-                  // ─── HEALTH TIPS (Horizontal scroll) ───
-                  _buildSectionTitle('Tips Kesehatan'),
-                  const SizedBox(height: 16),
-                  _buildHealthTips(),
-
-                  const SizedBox(height: 28),
-
-                  // ─── NEWS PENYAKIT TERKINI ───
+                  const _SearchBar(),
+                  const SizedBox(height: 24),
+                  const _ServiceRow(),
+                  const SizedBox(height: 24),
+                  const _AIBanner(),
+                  const SizedBox(height: 24),
+                  const _SafetyStrip(),
+                  const SizedBox(height: 24),
                   const DiseaseNewsSection(),
-
-                  const SizedBox(height: 28),
-
-                  // ─── RECENT ACTIVITY ───
-                  _buildSectionTitle('Aktivitas Terakhir'),
-                  const SizedBox(height: 16),
-                  _buildRecentActivity(),
-
+                  const SizedBox(height: 24),
+                  const AppSectionHeader(title: 'Aktivitas'),
+                  const SizedBox(height: 12),
+                  EmptyStateCard(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Mulai dari satu langkah kecil',
+                    message:
+                        'Cek gejala atau scan label obat. Riwayat akan tampil saat data backend tersedia.',
+                    actionLabel: 'Cek gejala',
+                    onAction: () => Get.toNamed(AppRoutes.symptom),
+                  ),
+                  const SizedBox(height: 82),
                 ]),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(gradient: AppTheme.heroGradient),
-      child: Stack(
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final authController = Get.find<AuthController>();
+      final name = authController.userData['name'] ?? 'Guest';
+      final firstName = name.toString().trim().split(' ').first;
+
+      return Row(
         children: [
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top row
-                  Obx(() {
-                    final authController = Get.find<AuthController>();
-                    final name = authController.userData['name'] ?? 'Guest';
-                    final firstName = name.split(' ').isNotEmpty ? name.split(' ')[0] : 'Guest';
-                    final encodedName = Uri.encodeComponent(name);
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Halo, $firstName! 👋',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Semoga Anda sehat hari ini',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.75),
-                              ),
-                            ),
-                          ],
-                        ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 46,
-                                height: 46,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.4),
-                                    width: 2,
-                                  ),
-                                  image: DecorationImage(
-                                    image: NetworkImage(
-                                      'https://ui-avatars.com/api/?name=$encodedName&background=fff&color=0B6E4F&size=200',
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.secondary,
-                                    border: Border.all(
-                                      color: AppColors.primary,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-
-                  const SizedBox(height: 20),
-
-                  // Search Bar
-                  GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.search_rounded,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Cari obat, gejala, atau apotek...',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.tune_rounded,
-                              color: Colors.white.withValues(alpha: 0.9),
-                              size: 16,
-                            ),
-                          ),
-                        ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const StatusPill(
+                      label: 'SmartFarmasi',
+                      color: AppColors.primary,
+                      icon: Icons.local_pharmacy_rounded,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '2026',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textTertiary,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hai, $firstName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink,
+                    height: 1.05,
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () => Get.toNamed(AppRoutes.profile),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                shape: BoxShape.circle,
+                boxShadow: AppTheme.cardShadow,
+              ),
+              child: Center(
+                child: Text(
+                  _initials(name.toString()),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ),
         ],
+      );
+    });
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'SF';
+    final first = parts.first[0];
+    final second = parts.length > 1 && parts[1].isNotEmpty ? parts[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoutes.symptom),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Cari disini',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+            const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 22),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 17,
-        fontWeight: FontWeight.w800,
-        color: AppColors.textPrimary,
-      ),
-    );
-  }
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow();
 
-  Widget _buildQuickActions() {
-    final items = [
-      _QuickAction(
-        icon: Icons.medical_information_rounded,
-        label: 'Cek\nGejala',
-        bgColor: const Color(0xFFE6F4EF),
-        iconColor: AppColors.primary,
-        onTap: () => Get.toNamed(AppRoutes.symptom),
-      ),
-      _QuickAction(
-        icon: Icons.document_scanner_rounded,
-        label: 'Scan\nObat',
-        bgColor: const Color(0xFFEAF0FF),
-        iconColor: const Color(0xFF3B5BDB),
-        onTap: () {},
-      ),
-      _QuickAction(
-        icon: Icons.local_pharmacy_rounded,
-        label: 'Apotek\nTerdekat',
-        bgColor: const Color(0xFFFFF3E0),
-        iconColor: const Color(0xFFE67700),
-        onTap: () {},
-      ),
-      _QuickAction(
-        icon: Icons.chat_bubble_rounded,
-        label: 'Tanya\nAI',
-        bgColor: const Color(0xFFF3E5F5),
-        iconColor: const Color(0xFF7B2FBE),
-        onTap: () {},
-      ),
-    ];
-
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: items
-          .asMap()
-          .entries
-          .map((e) => _buildQuickActionItem(e.value, e.key))
-          .toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ServiceItem(
+          title: 'Gejala',
+          icon: Icons.health_and_safety_rounded,
+          color: AppColors.primary,
+          onTap: () => Get.toNamed(AppRoutes.symptom),
+        ),
+        _ServiceItem(
+          title: 'Scan',
+          icon: Icons.document_scanner_rounded,
+          color: AppColors.accent,
+          onTap: () => Get.toNamed(AppRoutes.scan),
+        ),
+        _ServiceItem(
+          title: 'Asisten',
+          icon: Icons.forum_rounded,
+          color: AppColors.secondary,
+          onTap: () => Get.toNamed(AppRoutes.chatbot),
+        ),
+        _ServiceItem(
+          title: 'Apotek',
+          icon: Icons.local_pharmacy_rounded,
+          color: AppColors.amber,
+          onTap: () => _comingSoon('Apotek & stok obat'),
+        ),
+      ],
     );
   }
 
-  Widget _buildQuickActionItem(_QuickAction item, int index) {
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 400 + index * 80),
-      tween: Tween(begin: 0, end: 1),
-      curve: Curves.easeOutBack,
-      builder: (context, val, child) {
-        return Transform.scale(scale: val, child: child);
-      },
-      child: GestureDetector(
-        onTap: item.onTap,
+  void _comingSoon(String title) {
+    Get.snackbar(
+      title,
+      'Fitur ini akan aktif setelah data apotek tersedia.',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 16,
+    );
+  }
+}
+
+class _ServiceItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ServiceItem({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 72,
         child: Column(
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 58,
+              height: 58,
               decoration: BoxDecoration(
-                color: item.bgColor,
-                borderRadius: BorderRadius.circular(18),
+                color: Colors.white,
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: item.iconColor.withValues(alpha: 0.15),
+                    color: color.withValues(alpha: 0.12),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Icon(item.icon, color: item.iconColor, size: 28),
+              child: Center(
+                child: GradientIconBox(
+                  icon: icon,
+                  color: color,
+                  size: 44, // Make icon slightly larger inside
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              item.label,
+              title,
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-                height: 1.3,
+                color: AppColors.ink,
               ),
             ),
           ],
@@ -381,292 +293,174 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       ),
     );
   }
+}
 
-  Widget _buildHeroBanner() {
-    return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.symptom),
-      child: Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0B6E4F), Color(0xFF16A085)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+class _AIBanner extends StatelessWidget {
+  const _AIBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cio Asisten Dokter',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: AppColors.ink,
           ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: AppTheme.buttonShadow,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 6,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '✨ Diagnosis AI',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Cek Kondisi\nKesehatan Anda',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Analisis gejala & dapatkan rekomendasi obat instan',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Mulai Analisis →',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ],
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B6E4F),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0B6E4F).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-            ),
-            Expanded(
-              flex: 4,
-              child: Icon(
-                Icons.health_and_safety_rounded,
-                size: 100,
-                color: Colors.white.withValues(alpha: 0.25),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHealthTips() {
-    final tips = [
-      _HealthTip(
-        title: 'Minum Air Putih 8 Gelas/Hari',
-        category: 'Hidrasi',
-        emoji: '💧',
-        color: const Color(0xFFEAF5FF),
-      ),
-      _HealthTip(
-        title: 'Tidur 7-9 Jam Setiap Malam',
-        category: 'Istirahat',
-        emoji: '😴',
-        color: const Color(0xFFF3E5F5),
-      ),
-      _HealthTip(
-        title: 'Olahraga 30 Menit Per Hari',
-        category: 'Aktif',
-        emoji: '🏃',
-        color: const Color(0xFFE6F4EF),
-      ),
-    ];
-
-    return SizedBox(
-      height: 130,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: tips.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final tip = tips[index];
-          return Container(
-            width: 180,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: tip.color,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
               children: [
-                Text(tip.emoji, style: const TextStyle(fontSize: 28)),
-                const Spacer(),
-                Text(
-                  tip.category,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                    letterSpacing: 0.5,
+                Positioned(
+                  right: -10,
+                  bottom: 40,
+                  child: IgnorePointer(
+                    child: SizedBox(
+                      height: 190,
+                      width: 180,
+                      child: ShaderMask(
+                        shaderCallback: (rect) {
+                          return const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [Colors.transparent, Colors.white, Colors.white],
+                            stops: [0.0, 0.35, 1.0], // Feather the left side
+                          ).createShader(rect);
+                        },
+                        blendMode: BlendMode.dstIn,
+                        child: Image.asset(
+                          'assets/illustrations/doctor_green.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  tip.title,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.local_pharmacy_rounded, color: Colors.white, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Cio',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Memperkenalkan',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Cio\nAsisten Dokter',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 22,
+                          height: 1.2,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Material(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () => Get.toNamed(AppRoutes.chatbot),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Chat dengan Cio',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity() {
-    final activities = [
-      _Activity(
-        icon: Icons.medical_information_rounded,
-        title: 'Analisis Gejala',
-        subtitle: 'Demam, Sakit Kepala',
-        time: '2 jam lalu',
-        color: AppColors.primaryLighter,
-        iconColor: AppColors.primary,
-      ),
-      _Activity(
-        icon: Icons.document_scanner_rounded,
-        title: 'Scan Obat',
-        subtitle: 'Paracetamol 500mg',
-        time: 'Kemarin',
-        color: const Color(0xFFEAF0FF),
-        iconColor: const Color(0xFF3B5BDB),
-      ),
-    ];
-
-    return Column(
-      children: activities.map((a) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: AppTheme.softShadow,
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: a.color,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(a.icon, color: a.iconColor, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      a.title,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      a.subtitle,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                a.time,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  color: AppColors.textTertiary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+        ),
+      ],
     );
   }
 }
 
-class _QuickAction {
-  final IconData icon;
-  final String label;
-  final Color bgColor;
-  final Color iconColor;
-  final VoidCallback onTap;
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.bgColor,
-    required this.iconColor,
-    required this.onTap,
-  });
-}
+class _SafetyStrip extends StatelessWidget {
+  const _SafetyStrip();
 
-class _HealthTip {
-  final String title;
-  final String category;
-  final String emoji;
-  final Color color;
-  const _HealthTip({
-    required this.title,
-    required this.category,
-    required this.emoji,
-    required this.color,
-  });
-}
-
-class _Activity {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String time;
-  final Color color;
-  final Color iconColor;
-  const _Activity({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.color,
-    required this.iconColor,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return LiquidCard(
+      borderRadius: BorderRadius.circular(24),
+      padding: const EdgeInsets.all(14),
+      gradient: const LinearGradient(
+        colors: [Color(0xFFFFF7E7), Color(0xFFEFFFF7)],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ),
+      child: Row(
+        children: [
+          const GradientIconBox(
+            icon: Icons.verified_user_rounded,
+            color: AppColors.amber,
+            size: 44,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Rekomendasi hanya panduan awal. Untuk kondisi berat atau obat resep, konsultasi dengan tenaga kesehatan.',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                height: 1.45,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

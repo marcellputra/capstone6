@@ -25,7 +25,7 @@ def start_scheduler(app):
         cleanup_inactive_disease_news,
         fetch_and_store_disease_news,
     )
-    from app.api.auth import cleanup_expired_otps
+    from app.api.auth import cleanup_expired_otps, prune_permanently_deleted_users
 
     def refresh_job():
         logger.info("[Scheduler] Running disease news refresh...")
@@ -51,6 +51,15 @@ def start_scheduler(app):
         except Exception as exc:
             logger.error("[Scheduler] OTP Cleanup error: %s", exc)
 
+    def prune_deleted_accounts_job():
+        logger.info("[Scheduler] Running soft-deleted accounts pruning...")
+        try:
+            purged = prune_permanently_deleted_users(app=app, retention_days=30)
+            if purged > 0:
+                logger.info("[Scheduler] Pruning done: %d akun terhapus permanen dibersihkan.", purged)
+        except Exception as exc:
+            logger.error("[Scheduler] Pruning error: %s", exc)
+
     _scheduler = BackgroundScheduler(daemon=True, timezone="Asia/Jakarta")
     _scheduler.add_job(
         func=refresh_job,
@@ -73,8 +82,15 @@ def start_scheduler(app):
         name="OTP Expired Cleanup",
         replace_existing=True,
     )
+    _scheduler.add_job(
+        func=prune_deleted_accounts_job,
+        trigger=IntervalTrigger(days=1),
+        id="prune_deleted_users",
+        name="Prune Scheduled User Deletions",
+        replace_existing=True,
+    )
     _scheduler.start()
-    logger.info("[Scheduler] Disease news scheduler started (refresh every 1h, cleanup every 2d).")
+    logger.info("[Scheduler] Disease news and user cleanup scheduler started.")
 
     # Jalankan sekali saat startup setelah 10 detik (hindari blocking startup)
     import threading

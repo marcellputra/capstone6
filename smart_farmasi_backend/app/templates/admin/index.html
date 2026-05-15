@@ -3,7 +3,7 @@
 {% block body %}
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="mb-4">
+        <div class="flash-stack">
             {% for category, message in messages %}
                 <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
                     {{ message }}
@@ -16,212 +16,233 @@
     {% endif %}
 {% endwith %}
 
-<div class="row">
-    <!-- Stat Card 1: Medication Scans -->
-    <div class="col-md-4 mb-4">
-        <div class="bruddle-card">
-            <div class="card-top">
-                <div class="card-title">Medication Scans</div>
-                <div class="text-muted" style="font-size: 1.2rem;"><i class="fas fa-qrcode"></i></div>
+<section class="dashboard-hero">
+    <div>
+        <span class="hero-kicker">Today in Smart Farmasi</span>
+        <h2>Live pharmacy operations at a glance.</h2>
+        <p>Monitor patient growth, feature activity, and admin-sensitive actions from one clean control surface.</p>
+    </div>
+    <div class="hero-stamp">
+        <span>{{ active_today }}</span>
+        <strong>New Patients Today</strong>
+    </div>
+</section>
+
+<section class="stats-grid" aria-label="Dashboard statistics">
+    <article class="motion-card stat-card stat-card-green">
+        <div class="stat-card-top">
+            <div>
+                <span class="card-eyebrow">Medication</span>
+                <h3>Medication Scans</h3>
             </div>
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span>Usage Rate</span>
-                    {% if total_activities > 0 %}
-                        <span>{{ (total_scans / total_activities * 100) | round | int }}%</span>
-                    {% else %}
-                        <span>0%</span>
-                    {% endif %}
-                </div>
-                <div class="progress-bar-custom">
-                    <div class="progress-fill" style="width: {{ (total_scans / total_activities * 100) if total_activities > 0 else 0 }}%; background-color: var(--primary-purple);"></div>
-                </div>
+            <div class="stat-icon"><i class="fas fa-qrcode"></i></div>
+        </div>
+        <div class="stat-value">{{ total_scans }}</div>
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>Usage Rate</span>
+                {% if total_activities > 0 %}
+                    <span>{{ (total_scans / total_activities * 100) | round | int }}%</span>
+                {% else %}
+                    <span>0%</span>
+                {% endif %}
             </div>
-            <div class="card-footer-custom">
-                <span class="date-badge-custom">{{ total_scans }} Total Scans</span>
-                <div class="text-muted" style="font-size: 0.75rem;">Top feature this month</div>
+            <div class="progress-bar-custom">
+                <div class="progress-fill progress-fill-green" style="width: {{ (total_scans / total_activities * 100) if total_activities > 0 else 0 }}%;"></div>
             </div>
         </div>
-    </div>
+        <div class="card-footer-custom">
+            <span class="date-badge-custom">{{ total_scans }} Total Scans</span>
+            <span>Top feature</span>
+        </div>
+    </article>
 
-    <!-- Stat Card 2: Symptom Checks -->
-    <div class="col-md-4 mb-4">
-        <div class="bruddle-card">
-            <div class="card-top">
-                <div class="card-title">Symptom Analysis</div>
-                <div class="text-muted" style="font-size: 1.2rem;"><i class="fas fa-stethoscope"></i></div>
+    <article class="motion-card stat-card stat-card-blue">
+        <div class="stat-card-top">
+            <div>
+                <span class="card-eyebrow">Clinical</span>
+                <h3>Symptom Analysis</h3>
             </div>
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span>Active Checks</span>
-                    {% if total_activities > 0 %}
-                        <span>{{ (total_symptoms / total_activities * 100) | round | int }}%</span>
-                    {% else %}
-                        <span>0%</span>
-                    {% endif %}
-                </div>
-                <div class="progress-bar-custom">
-                    <div class="progress-fill" style="width: {{ (total_symptoms / total_activities * 100) if total_activities > 0 else 0 }}%; background-color: var(--success-green);"></div>
-                </div>
+            <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
+        </div>
+        <div class="stat-value">{{ total_symptoms }}</div>
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>Active Checks</span>
+                {% if total_activities > 0 %}
+                    <span>{{ (total_symptoms / total_activities * 100) | round | int }}%</span>
+                {% else %}
+                    <span>0%</span>
+                {% endif %}
             </div>
-            <div class="card-footer-custom">
-                <span class="date-badge-custom">{{ total_symptoms }} Checks</span>
-                <div class="text-muted" style="font-size: 0.75rem;">{{ active_today }} New Patients</div>
+            <div class="progress-bar-custom">
+                <div class="progress-fill progress-fill-blue" style="width: {{ (total_symptoms / total_activities * 100) if total_activities > 0 else 0 }}%;"></div>
             </div>
         </div>
-    </div>
+        <div class="card-footer-custom">
+            <span class="date-badge-custom">{{ total_symptoms }} Checks</span>
+            <span>{{ active_today }} new patients</span>
+        </div>
+    </article>
 
-    <!-- Stat Card 3: AI Consultations -->
-    <div class="col-md-4 mb-4">
-        <div class="bruddle-card">
-            <div class="card-top">
-                <div class="card-title">AI Consultations</div>
-                <div class="text-muted" style="font-size: 1.2rem;"><i class="fas fa-robot"></i></div>
+    <article class="motion-card stat-card stat-card-yellow">
+        <div class="stat-card-top">
+            <div>
+                <span class="card-eyebrow">AI Support</span>
+                <h3>AI Consultations</h3>
             </div>
-            <div class="progress-container">
-                <div class="progress-info">
-                    <span>Chat Volume</span>
-                    {% if total_activities > 0 %}
-                        <span>{{ (total_consultations / total_activities * 100) | round | int }}%</span>
-                    {% else %}
-                        <span>0%</span>
-                    {% endif %}
-                </div>
-                <div class="progress-bar-custom">
-                    <div class="progress-fill" style="width: {{ (total_consultations / total_activities * 100) if total_activities > 0 else 0 }}%; background-color: var(--warning-gold);"></div>
-                </div>
+            <div class="stat-icon"><i class="fas fa-robot"></i></div>
+        </div>
+        <div class="stat-value">{{ total_consultations }}</div>
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>Chat Volume</span>
+                {% if total_activities > 0 %}
+                    <span>{{ (total_consultations / total_activities * 100) | round | int }}%</span>
+                {% else %}
+                    <span>0%</span>
+                {% endif %}
             </div>
-            <div class="card-footer-custom">
-                <span class="date-badge-custom">{{ total_consultations }} Chats</span>
-                <div class="text-muted" style="font-size: 0.75rem;">{{ total_users }} Total Users</div>
+            <div class="progress-bar-custom">
+                <div class="progress-fill progress-fill-yellow" style="width: {{ (total_consultations / total_activities * 100) if total_activities > 0 else 0 }}%;"></div>
             </div>
         </div>
-    </div>
-</div>
+        <div class="card-footer-custom">
+            <span class="date-badge-custom">{{ total_consultations }} Chats</span>
+            <span>{{ total_users }} total users</span>
+        </div>
+    </article>
+</section>
 
-<div class="row mt-4">
-    <!-- Main Activity List -->
-    <div class="col-lg-8">
-        <div class="activity-list-container">
-            <div class="list-header">
-                <div class="list-tabs">
-                    <button class="tab-btn active">Real-time Logs</button>
-                    <button class="tab-btn">Flagged Items</button>
-                </div>
-                <button class="tab-btn" style="border: 1px solid #e5e7eb; color: black;">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
+<section class="dashboard-main-grid">
+    <div class="activity-list-container">
+        <div class="list-header">
+            <div>
+                <span class="panel-kicker">Real-time Logs</span>
+                <h3>Recent Activity</h3>
             </div>
+            <button class="btn-motion btn-motion-compact" type="button">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
 
-            <div class="activity-items">
-                {% for activity in recent_activities %}
-                <div class="activity-item">
-                    <div class="activity-icon-box">
-                        <i class="fas {% if activity.activity_type == 'scan' %}fa-qrcode{% elif activity.activity_type == 'symptom_check' %}fa-stethoscope{% elif activity.activity_type == 'chatbot' %}fa-robot{% else %}fa-user-circle{% endif %}"></i>
+        <div class="activity-items">
+            {% for activity in recent_activities %}
+            <div class="activity-item">
+                <div class="activity-icon-box">
+                    <i class="fas {% if activity.activity_type == 'scan' %}fa-qrcode{% elif activity.activity_type == 'symptom_check' %}fa-stethoscope{% elif activity.activity_type == 'chatbot' %}fa-robot{% else %}fa-user-circle{% endif %}"></i>
+                </div>
+                <div class="activity-main-info">
+                    <div class="activity-item-title">
+                        <span>{{ activity.user.name if activity.user else 'Unknown user' }}</span>
+                        <strong>{{ activity.activity_type.replace('_', ' ') | capitalize }}</strong>
                     </div>
-                    <div class="activity-main-info">
-                        <div class="activity-item-title">
-                            <span class="font-weight-bold">{{ activity.user.name }}</span> performed 
-                            <span class="text-primary">{{ activity.activity_type.replace('_', ' ') | capitalize }}</span>
+                    <div class="activity-description">{{ activity.description or 'No additional details available.' }}</div>
+                </div>
+                <div class="activity-item-meta">
+                    <span class="date-badge-custom">{{ activity.timestamp.strftime('%H:%M | %d %b') }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-notes-medical"></i></div>
+                <h4>No activity logs found</h4>
+                <p>Activity from scans, symptom checks, and chatbot sessions will appear here.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <aside class="dashboard-side-stack">
+        <section class="side-panel">
+            <div class="side-panel-header">
+                <div>
+                    <span class="panel-kicker">System</span>
+                    <h3>Health Checks</h3>
+                </div>
+                <span class="status-dot"></span>
+            </div>
+
+            <div class="health-item">
+                <div class="health-title">
+                    <span>API Connectivity</span>
+                    <span class="modern-badge badge-success">Stable</span>
+                </div>
+                <div class="progress-bar-custom thin">
+                    <div class="progress-fill progress-fill-green" style="width: 100%;"></div>
+                </div>
+                <p>Communication with Flutter app is running smoothly at 12ms latency.</p>
+            </div>
+
+            <div class="health-item">
+                <div class="health-title">
+                    <span>AI Model Status</span>
+                    <span class="modern-badge badge-primary">Active</span>
+                </div>
+                <p>Symptom analysis engine is up to date with latest medical datasets.</p>
+            </div>
+        </section>
+
+        <section class="side-panel">
+            <div class="side-panel-header">
+                <div>
+                    <span class="panel-kicker">Users</span>
+                    <h3>Recent Patients</h3>
+                </div>
+                <a href="{{ url_for('user.index_view') }}" class="text-link">View all</a>
+            </div>
+
+            <div class="dashboard-user-list">
+                {% for user in recent_users %}
+                <div class="dashboard-user-row">
+                    <div class="dashboard-user-avatar">
+                        {{ (user.name or user.email or 'U')[0].upper() }}
+                    </div>
+                    <div class="dashboard-user-info">
+                        <div class="dashboard-user-name">{{ user.name or 'Unnamed user' }}</div>
+                        <div class="dashboard-user-email">{{ user.email }}</div>
+                        <div class="dashboard-user-meta">
+                            <span class="modern-badge {{ 'badge-success' if user.is_verified else 'badge-secondary' }}">
+                                {{ 'Verified' if user.is_verified else 'Pending' }}
+                            </span>
+                            <span class="modern-badge {{ 'badge-danger' if user.role == 'admin' else 'badge-other' }}">
+                                {{ user.role or 'user' }}
+                            </span>
                         </div>
-                        <div class="text-muted" style="font-size: 0.8rem;">{{ activity.description or 'No additional details available.' }}</div>
                     </div>
-                    <div class="activity-item-meta text-muted" style="font-size: 0.8rem; font-weight: 700;">
-                        <span class="date-badge-custom" style="background: white;">{{ activity.timestamp.strftime('%H:%M • %d %b') }}</span>
+                    <div class="dashboard-user-actions">
+                        {% if user.id == session.get('user_id') %}
+                            <button class="btn-delete-user" disabled title="Akun yang sedang digunakan tidak bisa dihapus">
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        {% else %}
+                            <form method="post"
+                                  action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                                  onsubmit="return confirm('Hapus user {{ user.email }}? Data OTP dan aktivitas user ini juga akan dihapus.');">
+                                <button type="submit" class="btn-delete-user" title="Hapus user">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
                 {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-notes-medical fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No activity logs found for today.</p>
+                <div class="empty-state compact">
+                    <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+                    <h4>Belum ada user</h4>
+                    <p>User terbaru akan muncul di panel ini.</p>
                 </div>
                 {% endfor %}
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Right Sidebar Content -->
-    <div class="col-lg-4">
-        <div class="upcoming-section">
-            <div class="d-flex justify-content-between mb-4">
-                <button class="tab-btn active" style="font-size: 0.9rem;">System Health</button>
-                <button class="tab-btn" style="font-size: 0.9rem;">Actions</button>
+        <section class="admin-tip">
+            <i class="fas fa-lightbulb"></i>
+            <div>
+                <h3>Admin Tip</h3>
+                <p>Export daily patient activity reports for offline auditing when needed.</p>
             </div>
-
-            <div class="upcoming-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="font-weight-bold">API Connectivity</span>
-                    <span class="badge badge-success">STABLE</span>
-                </div>
-                <div class="progress-bar-custom" style="height: 4px;">
-                    <div class="progress-fill" style="width: 100%; background-color: var(--success-green);"></div>
-                </div>
-                <p class="text-muted mt-2" style="font-size: 0.8rem;">Communication with Flutter app is running smoothly at 12ms latency.</p>
-            </div>
-
-            <div class="upcoming-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="font-weight-bold">AI Model Status</span>
-                    <span class="badge badge-primary">ACTIVE</span>
-                </div>
-                <p class="text-muted mt-2" style="font-size: 0.8rem;">Symptom analysis engine is up to date with latest medical datasets.</p>
-                <div class="upcoming-tag">VERIFIED</div>
-            </div>
-
-            <div class="upcoming-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="font-weight-bold">Recent Users</span>
-                    <a href="{{ url_for('user.index_view') }}" class="text-primary" style="font-size: 0.8rem; font-weight: 800;">View all</a>
-                </div>
-
-                <div class="dashboard-user-list">
-                    {% for user in recent_users %}
-                    <div class="dashboard-user-row">
-                        <div class="dashboard-user-avatar">
-                            {{ (user.name or user.email or 'U')[0].upper() }}
-                        </div>
-                        <div class="dashboard-user-info">
-                            <div class="dashboard-user-name">{{ user.name }}</div>
-                            <div class="dashboard-user-email">{{ user.email }}</div>
-                            <div class="dashboard-user-meta">
-                                <span class="modern-badge {{ 'badge-success' if user.is_verified else 'badge-secondary' }}">
-                                    {{ 'Verified' if user.is_verified else 'Pending' }}
-                                </span>
-                                <span class="modern-badge {{ 'badge-danger' if user.role == 'admin' else 'badge-other' }}">
-                                    {{ user.role or 'user' }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="dashboard-user-actions">
-                            {% if user.id == session.get('user_id') %}
-                                <button class="btn-delete-user" disabled title="Akun yang sedang digunakan tidak bisa dihapus">
-                                    <i class="fas fa-lock"></i>
-                                </button>
-                            {% else %}
-                                <form method="post"
-                                      action="{{ url_for('admin.delete_user', user_id=user.id) }}"
-                                      onsubmit="return confirm('Hapus user {{ user.email }}? Data OTP dan aktivitas user ini juga akan dihapus.');">
-                                    <button type="submit" class="btn-delete-user" title="Hapus user">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-3">
-                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">Belum ada user.</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <div class="mt-4 p-3 bruddle-card" style="background: var(--primary-purple); color: white;">
-                <h6 class="font-weight-bold mb-2"><i class="fas fa-lightbulb mr-2"></i> Admin Tip</h6>
-                <p style="font-size: 0.8rem; opacity: 0.9; margin: 0;">You can export daily patient activity reports directly to PDF for offline auditing.</p>
-            </div>
-        </div>
-    </div>
-</div>
+        </section>
+    </aside>
+</section>
 {% endblock %}

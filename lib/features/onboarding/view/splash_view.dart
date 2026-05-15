@@ -13,8 +13,7 @@ class SplashView extends StatefulWidget {
   State<SplashView> createState() => _SplashViewState();
 }
 
-class _SplashViewState extends State<SplashView>
-    with TickerProviderStateMixin {
+class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
   late AnimationController _logoController;
   late AnimationController _textController;
   late AnimationController _bgController;
@@ -29,10 +28,12 @@ class _SplashViewState extends State<SplashView>
   void initState() {
     super.initState();
 
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
 
     _bgController = AnimationController(
       vsync: this,
@@ -47,21 +48,27 @@ class _SplashViewState extends State<SplashView>
       duration: const Duration(milliseconds: 700),
     );
 
-    _bgOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _bgController, curve: Curves.easeOut),
-    );
+    _bgOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _bgController, curve: Curves.easeOut));
     _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
     );
     _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: const Interval(0, 0.5, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0, 0.5, curve: Curves.easeOut),
+      ),
     );
-    _textOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
-    );
-    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
-    );
+    _textOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOut));
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+        );
 
     _runAnimations();
   }

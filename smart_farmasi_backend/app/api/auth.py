@@ -1,11 +1,16 @@
 from flask_restful import Resource
-from flask import current_app, request
+from flask import current_app, request, url_for
 from flask_jwt_extended import create_access_token, decode_token, jwt_required, get_jwt_identity
 from app.models import db, User, UserActivity, EmailOTP
 from app.services.email_service import EmailDeliveryError, send_otp_email
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
+from werkzeug.utils import secure_filename
 import datetime
+import os
 import random
 import re
+import uuid
 
 
 OTP_PURPOSE_VERIFY_EMAIL = 'verify_email'
@@ -14,11 +19,43 @@ OTP_PURPOSE_EMAIL_CHANGE = 'email_change'
 OTP_PURPOSE_PASSWORD_CHANGE = 'password_change'
 OTP_PURPOSE_ADMIN_LOGIN = 'admin_login'
 OTP_PURPOSE_APP_PASSWORD = 'app_password'
+OTP_PURPOSE_DELETE_ACCOUNT = 'delete_account'
 JWT_PURPOSE_APP_PASSWORD_SETUP = 'app_password_setup'
 
 
 def _normalize_email(email):
     return (email or '').strip().lower()
+
+
+def _verify_google_token(token):
+    token = (token or '').strip()
+    if not token:
+        raise ValueError('Token Google wajib dikirim')
+
+    client_ids = current_app.config.get('GOOGLE_CLIENT_IDS') or []
+    if not client_ids:
+        raise ValueError('Google Client ID belum dikonfigurasi di backend')
+
+    last_error = None
+    for client_id in client_ids:
+        try:
+            id_info = google_id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                client_id,
+            )
+            if id_info.get('iss') not in {
+                'accounts.google.com',
+                'https://accounts.google.com',
+            }:
+                raise ValueError('Issuer token Google tidak valid')
+            if not id_info.get('email_verified', False):
+                raise ValueError('Email Google belum terverifikasi')
+            return id_info
+        except ValueError as exc:
+            last_error = exc
+
+    raise ValueError(f'Token Google tidak valid: {last_error}')
 
 
 def _is_otp_bypass_email(email):
@@ -161,6 +198,12 @@ def _validate_otp_or_error(user, email, otp_code, purpose):
     return otp, None
 
 
+def _profile_picture_url(user):
+    if not user.profile_picture:
+        return None
+    return url_for('static', filename=user.profile_picture, _external=False)
+
+
 def _serialize_user(user):
     return {
         'id': user.id,
@@ -171,7 +214,41 @@ def _serialize_user(user):
         'has_password': bool(user.password_hash),
         'is_verified': user.is_verified,
         'email_verified_at': user.email_verified_at.isoformat() if user.email_verified_at else None,
+        'profile_picture': user.profile_picture,
+        'profile_picture_url': _profile_picture_url(user),
     }
+
+
+def _profile_upload_dir():
+    subdir = current_app.config.get('PROFILE_PHOTO_UPLOAD_SUBDIR', 'uploads/profile_pictures')
+    return os.path.join(current_app.static_folder, *subdir.replace('\\', '/').split('/'))
+
+
+def _profile_picture_path(relative_path):
+    if not relative_path:
+        return None
+    static_root = os.path.abspath(current_app.static_folder)
+    candidate = os.path.abspath(os.path.join(static_root, *relative_path.replace('\\', '/').split('/')))
+    if not candidate.startswith(static_root + os.sep):
+        return None
+    return candidate
+
+
+def _delete_profile_picture_file(relative_path):
+    file_path = _profile_picture_path(relative_path)
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except OSError:
+            current_app.logger.warning('Failed to delete profile photo: %s', file_path)
+
+
+def _allowed_profile_photo(filename):
+    if not filename or '.' not in filename:
+        return False
+    ext = filename.rsplit('.', 1)[1].lower()
+    allowed = current_app.config.get('PROFILE_PHOTO_ALLOWED_EXTENSIONS', {'jpg', 'jpeg', 'png', 'webp'})
+    return ext in allowed
 
 class RegisterAPI(Resource):
     def post(self):
@@ -999,6 +1076,15 @@ class LoginAPI(Resource):
 
             # Allow both 'user' and 'admin' roles for mobile app login
             if user and user.role in ['user', 'admin'] and user.check_password(password):
+                # Professional Check: If soft-deleted, block and offer reactivation
+                if user.deleted_at:
+                    return {
+                        'message': 'Akun Anda saat ini sedang dinonaktifkan untuk dijadwalkan dihapus permanen.',
+                        'email': user.email,
+                        'action': 'reactivate_prompt',
+                        'provider': user.login_provider,
+                    }, 403
+
                 if user.login_provider == 'email' and not user.is_verified:
                     if _is_otp_bypass_email(user.email):
                         user.mark_email_verified()
@@ -1046,30 +1132,161 @@ class ProfileAPI(Resource):
         except Exception as e:
             return {'message': f'Internal Server Error: {str(e)}'}, 500
 
+    @jwt_required()
+    def put(self):
+        try:
+            data = request.get_json() or {}
+            user_id = get_jwt_identity()
+            user = User.query.get(int(user_id))
+            if not user:
+                return {'message': 'User not found'}, 404
+
+            name = re.sub(r'\s+', ' ', str(data.get('name') or '')).strip()
+            if not name:
+                return {'message': 'Nama lengkap wajib diisi'}, 400
+            if len(name) > 100:
+                return {'message': 'Nama lengkap maksimal 100 karakter'}, 400
+
+            if user.name != name:
+                user.name = name
+                db.session.add(UserActivity(
+                    user_id=user.id,
+                    activity_type='update_profile',
+                    description='User updated profile name'
+                ))
+                db.session.commit()
+
+            return {
+                'message': 'Profil berhasil diperbarui.',
+                'user': _serialize_user(user),
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'message': f'Internal Server Error: {str(e)}'}, 500
+
+
+class ProfilePhotoAPI(Resource):
+    @jwt_required()
+    def post(self):
+        saved_path = None
+        try:
+            user_id = get_jwt_identity()
+            user = User.query.get(int(user_id))
+            if not user:
+                return {'message': 'User not found'}, 404
+
+            photo = request.files.get('photo')
+            if not photo or not photo.filename:
+                return {'message': 'Foto profil wajib dipilih'}, 400
+            if not _allowed_profile_photo(photo.filename):
+                return {'message': 'Format foto harus JPG, JPEG, PNG, atau WEBP'}, 400
+
+            max_bytes = current_app.config.get('PROFILE_PHOTO_MAX_BYTES', 2 * 1024 * 1024)
+            photo_bytes = photo.read()
+            if not photo_bytes:
+                return {'message': 'File foto tidak boleh kosong'}, 400
+            if len(photo_bytes) > max_bytes:
+                return {'message': 'Ukuran foto maksimal 2 MB'}, 413
+
+            upload_dir = _profile_upload_dir()
+            os.makedirs(upload_dir, exist_ok=True)
+
+            original = secure_filename(photo.filename)
+            ext = original.rsplit('.', 1)[1].lower()
+            filename = f'user_{user.id}_{uuid.uuid4().hex}.{ext}'
+            saved_path = os.path.join(upload_dir, filename)
+            with open(saved_path, 'wb') as handle:
+                handle.write(photo_bytes)
+
+            old_picture = user.profile_picture
+            upload_subdir = current_app.config.get('PROFILE_PHOTO_UPLOAD_SUBDIR', 'uploads/profile_pictures')
+            normalized_subdir = upload_subdir.strip('/').replace('\\', '/')
+            user.profile_picture = f"{normalized_subdir}/{filename}"
+            db.session.add(UserActivity(
+                user_id=user.id,
+                activity_type='update_profile_photo',
+                description='User updated profile photo'
+            ))
+            db.session.commit()
+            _delete_profile_picture_file(old_picture)
+
+            return {
+                'message': 'Foto profil berhasil diperbarui.',
+                'user': _serialize_user(user),
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            if saved_path and os.path.exists(saved_path):
+                try:
+                    os.remove(saved_path)
+                except OSError:
+                    current_app.logger.warning('Failed to remove failed profile photo upload: %s', saved_path)
+            return {'message': f'Internal Server Error: {str(e)}'}, 500
+
+    @jwt_required()
+    def delete(self):
+        try:
+            user_id = get_jwt_identity()
+            user = User.query.get(int(user_id))
+            if not user:
+                return {'message': 'User not found'}, 404
+
+            old_picture = user.profile_picture
+            user.profile_picture = None
+            db.session.add(UserActivity(
+                user_id=user.id,
+                activity_type='delete_profile_photo',
+                description='User deleted profile photo'
+            ))
+            db.session.commit()
+            _delete_profile_picture_file(old_picture)
+
+            return {
+                'message': 'Foto profil berhasil dihapus.',
+                'user': _serialize_user(user),
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'message': f'Internal Server Error: {str(e)}'}, 500
+
+
 class LoginGoogleAPI(Resource):
     def post(self):
         try:
             data = request.get_json()
             if not data:
                 return {'message': 'No input data provided'}, 400
-            
-            firebase_uid = data.get('firebase_uid') or data.get('google_id') or None
-            email = _normalize_email(data.get('email'))
-            name = data.get('name', 'Google User')
+
+            id_info = _verify_google_token(data.get('id_token'))
+            verified_email = _normalize_email(id_info.get('email'))
+            requested_email = _normalize_email(data.get('email'))
+            if requested_email and requested_email != verified_email:
+                return {'message': 'Email request tidak cocok dengan token Google'}, 400
+
+            firebase_uid = data.get('firebase_uid') or None
+            google_id = id_info.get('sub')
+            email = verified_email
+            name = data.get('name') or id_info.get('name') or 'Google User'
 
             if not email:
                 return {'message': 'Email is required'}, 400
 
             user = User.query.filter_by(email=email).first()
-            
+
+            if firebase_uid:
+                uid_owner = User.query.filter_by(firebase_uid=firebase_uid).first()
+                if uid_owner and uid_owner.email != email:
+                    return {
+                        'message': 'Akun Google ini sudah terhubung dengan email lain.'
+                    }, 409
+
             if user:
-                # Sync firebase_uid if missing
+                user.name = user.name or name
                 if not user.firebase_uid and firebase_uid:
                     user.firebase_uid = firebase_uid
                 user.login_provider = 'google'
                 user.mark_email_verified()
             else:
-                # Create new Google user
                 user = User(
                     name=name,
                     email=email,
@@ -1083,6 +1300,15 @@ class LoginGoogleAPI(Resource):
             
             db.session.commit()
 
+            # Professional Check: If soft-deleted, block and offer reactivation
+            if user and user.deleted_at:
+                return {
+                    'message': 'Akun Anda saat ini sedang dinonaktifkan untuk dijadwalkan dihapus permanen.',
+                    'email': user.email,
+                    'action': 'reactivate_prompt',
+                    'provider': 'google',
+                }, 403
+
             # Generate JWT token
             access_token = create_access_token(
                 identity=str(user.id),
@@ -1093,7 +1319,7 @@ class LoginGoogleAPI(Resource):
             activity = UserActivity(
                 user_id=user.id,
                 activity_type='login_google',
-                description='User logged in via Google'
+                description=f'User logged in via Google (sub: {google_id})'
             )
             db.session.add(activity)
             db.session.commit()
@@ -1102,7 +1328,182 @@ class LoginGoogleAPI(Resource):
                 'token': access_token,
                 'user': _serialize_user(user)
             }, 200
-            
+
+        except ValueError as e:
+            db.session.rollback()
+            return {'message': str(e)}, 401
         except Exception as e:
             db.session.rollback()
             return {'message': f'Login Google failed: {str(e)}'}, 500
+
+
+class RequestDeleteAccountOtpAPI(Resource):
+    @jwt_required()
+    def post(self):
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get(int(current_user_id))
+            if not user:
+                return {'message': 'Pengguna tidak ditemukan'}, 404
+
+            retry_after = _resend_retry_after(user.email, purpose=OTP_PURPOSE_DELETE_ACCOUNT, user_id=user.id)
+            if retry_after > 0:
+                return {
+                    'message': f'Silakan tunggu {retry_after} detik sebelum mengirim ulang kode OTP.',
+                    'retry_after_seconds': retry_after,
+                }, 429
+
+            _send_user_otp(user, purpose=OTP_PURPOSE_DELETE_ACCOUNT)
+            
+            # Log activity
+            db.session.add(UserActivity(
+                user_id=user.id,
+                activity_type='request_delete_otp',
+                description='User requested OTP to delete account'
+            ))
+            db.session.commit()
+
+            return {'message': f'Kode OTP penghapusan akun telah dikirim ke {user.email}.'}, 200
+        except EmailDeliveryError as exc:
+            db.session.rollback()
+            return {'message': str(exc)}, 500
+        except Exception as exc:
+            db.session.rollback()
+            return {'message': f'Gagal mengirim OTP: {str(exc)}'}, 500
+
+
+class ConfirmDeleteAccountAPI(Resource):
+    @jwt_required()
+    def post(self):
+        try:
+            current_user_id = get_jwt_identity()
+            user = User.query.get(int(current_user_id))
+            if not user:
+                return {'message': 'Pengguna tidak ditemukan'}, 404
+
+            data = request.get_json() or {}
+            
+            # Validation depends on login provider
+            if user.login_provider == 'google':
+                otp_code = data.get('otp_code')
+                if not otp_code:
+                    return {'message': 'Kode OTP wajib diisi untuk akun Google'}, 400
+                
+                otp, error_res = _validate_otp_or_error(user, user.email, otp_code, OTP_PURPOSE_DELETE_ACCOUNT)
+                if error_res:
+                    return error_res[0], error_res[1]
+            else:
+                # Email provider requires password
+                password = data.get('password')
+                if not password:
+                    return {'message': 'Password wajib diisi untuk konfirmasi'}, 400
+                if not user.check_password(password):
+                    return {'message': 'Password yang Anda masukkan salah'}, 401
+
+            # Process Soft Deletion
+            user.is_active = False
+            user.deleted_at = datetime.datetime.utcnow()
+            
+            # Log activity
+            activity = UserActivity(
+                user_id=user.id,
+                activity_type='account_deletion_scheduled',
+                description='User requested account deletion. Scheduled for 30 days.'
+            )
+            db.session.add(activity)
+            db.session.commit()
+
+            return {
+                'message': 'Akun Anda berhasil dinonaktifkan dan dijadwalkan untuk dihapus permanen dalam 30 hari.'
+            }, 200
+        except Exception as exc:
+            db.session.rollback()
+            return {'message': f'Gagal memproses penghapusan akun: {str(exc)}'}, 500
+
+
+class ReactivateAccountAPI(Resource):
+    def post(self):
+        try:
+            data = request.get_json() or {}
+            email = _normalize_email(data.get('email'))
+            password = data.get('password')
+            google_token = data.get('google_token')
+
+            if not email:
+                return {'message': 'Email wajib diisi'}, 400
+
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                return {'message': 'Akun tidak ditemukan'}, 404
+
+            # Authenticate before reactivating
+            if google_token:
+                try:
+                    id_info = _verify_google_token(google_token)
+                    g_email = _normalize_email(id_info.get('email'))
+                    if g_email != email:
+                        return {'message': 'Email token Google tidak cocok'}, 400
+                except ValueError as e:
+                    return {'message': f'Autentikasi Google gagal: {str(e)}'}, 401
+            elif password:
+                if not user.check_password(password):
+                    return {'message': 'Password salah'}, 401
+            else:
+                return {'message': 'Autentikasi diperlukan untuk memulihkan akun'}, 400
+
+            if not user.deleted_at:
+                return {'message': 'Akun ini tidak dalam status penghapusan'}, 400
+
+            # Perform Reactivation
+            user.is_active = True
+            user.deleted_at = None
+            
+            # Log activity
+            activity = UserActivity(
+                user_id=user.id,
+                activity_type='account_reactivated',
+                description='User restored account from scheduled deletion.'
+            )
+            db.session.add(activity)
+            db.session.commit()
+
+            # Generate new login token for instant access
+            access_token = create_access_token(
+                identity=str(user.id),
+                additional_claims={"role": user.role}
+            )
+
+            return {
+                'message': 'Selamat! Akun Anda berhasil diaktifkan kembali.',
+                'token': access_token,
+                'user': _serialize_user(user)
+            }, 200
+        except Exception as exc:
+            db.session.rollback()
+            return {'message': f'Gagal mengaktifkan kembali akun: {str(exc)}'}, 500
+
+
+def prune_permanently_deleted_users(app=None, retention_days=30):
+    """Menghapus permanen user yang sudah di-softdelete melebihi 30 hari."""
+    def _run_pruning():
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
+        expired_users = User.query.filter(
+            User.is_active == False,
+            User.deleted_at.isnot(None),
+            User.deleted_at < cutoff
+        ).all()
+        
+        count = 0
+        for user in expired_users:
+            db.session.delete(user)
+            count += 1
+            
+        if count > 0:
+            db.session.commit()
+        return count
+
+    if app:
+        with app.app_context():
+            return _run_pruning()
+    else:
+        return _run_pruning()

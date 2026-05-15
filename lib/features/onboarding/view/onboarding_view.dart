@@ -53,10 +53,12 @@ class _OnboardingViewState extends State<OnboardingView>
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
 
     _btnController = AnimationController(
       vsync: this,
@@ -101,7 +103,10 @@ class _OnboardingViewState extends State<OnboardingView>
                 child: TextButton(
                   onPressed: () => Get.offAllNamed(AppRoutes.login),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     backgroundColor: AppColors.primaryLighter,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -210,10 +215,7 @@ class _OnboardingViewState extends State<OnboardingView>
           value = _pageController.page! - index;
           value = (1 - value.abs() * 0.3).clamp(0.0, 1.0);
         }
-        return Transform.scale(
-          scale: value,
-          child: child,
-        );
+        return Transform.scale(scale: value, child: child);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -226,64 +228,63 @@ class _OnboardingViewState extends State<OnboardingView>
               Container(
                 width: size.width * 0.5,
                 height: size.width * 0.5,
-                constraints: const BoxConstraints(maxWidth: 300, maxHeight: 300),
+                constraints: const BoxConstraints(
+                  maxWidth: 300,
+                  maxHeight: 300,
+                ),
                 decoration: BoxDecoration(
                   color: data.iconBg,
                   shape: BoxShape.circle,
                 ),
-              child: Center(
-                child: Container(
-                  width: size.width * 0.4,
-                  height: size.width * 0.4,
-                  decoration: BoxDecoration(
-                    color: data.iconBg,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: data.iconColor.withValues(alpha: 0.15),
-                        blurRadius: 40,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    data.icon,
-                    size: 100,
-                    color: data.iconColor,
+                child: Center(
+                  child: Container(
+                    width: size.width * 0.4,
+                    height: size.width * 0.4,
+                    decoration: BoxDecoration(
+                      color: data.iconBg,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: data.iconColor.withValues(alpha: 0.15),
+                          blurRadius: 40,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Icon(data.icon, size: 100, color: data.iconColor),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 48),
+              const SizedBox(height: 48),
 
-            Text(
-              data.title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-                height: 1.2,
-                letterSpacing: -0.5,
+              Text(
+                data.title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            Text(
-              data.description,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.6,
+              Text(
+                data.description,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                  height: 1.6,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }

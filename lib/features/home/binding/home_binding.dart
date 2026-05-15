@@ -4,6 +4,7 @@ import '../controller/disease_news_controller.dart';
 import '../../symptom/controller/symptom_controller.dart';
 import '../../scan/controller/scan_controller.dart';
 import '../../profile/controller/profile_controller.dart';
+import '../../recommendation/controller/recommendation_controller.dart';
 import '../../../core/api/api_provider.dart';
 
 class HomeBinding extends Bindings {
@@ -15,18 +16,39 @@ class HomeBinding extends Bindings {
     }
 
     // Home Tab
-    Get.lazyPut<HomeController>(() => HomeController());
+    if (!Get.isRegistered<HomeController>()) {
+      Get.lazyPut<HomeController>(() => HomeController());
+    }
 
     // Disease News
-    Get.lazyPut<DiseaseNewsController>(() => DiseaseNewsController(), fenix: true);
+    if (!Get.isRegistered<DiseaseNewsController>()) {
+      Get.lazyPut<DiseaseNewsController>(
+        () => DiseaseNewsController(),
+        fenix: true,
+      );
+    }
 
     // Symptom Tab
-    Get.lazyPut<SymptomController>(() => SymptomController(), fenix: true);
+    if (!Get.isRegistered<SymptomController>()) {
+      Get.lazyPut<SymptomController>(() => SymptomController(), fenix: true);
+    }
+
+    // Recommendation result, dibutuhkan dari SymptomView yang berada di tab.
+    if (!Get.isRegistered<RecommendationController>()) {
+      Get.lazyPut<RecommendationController>(
+        () => RecommendationController(),
+        fenix: true,
+      );
+    }
 
     // Scan Tab
-    Get.lazyPut<ScanController>(() => ScanController(), fenix: true);
+    if (!Get.isRegistered<ScanController>()) {
+      Get.lazyPut<ScanController>(() => ScanController(), fenix: true);
+    }
 
     // Profile Tab
-    Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
+    if (!Get.isRegistered<ProfileController>()) {
+      Get.lazyPut<ProfileController>(() => ProfileController(), fenix: true);
+    }
   }
 }

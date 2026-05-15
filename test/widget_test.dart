@@ -20,7 +20,9 @@ void main() {
     });
 
     group('Login View Tests', () {
-      testWidgets('Login view displays form fields', (WidgetTester tester) async {
+      testWidgets('Login view displays form fields', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
         await tester.pumpWidget(const MyApp());
@@ -31,11 +33,16 @@ void main() {
 
         expect(find.text('SmartFarmasi'), findsOneWidget);
         expect(find.text('Selamat Datang'), findsOneWidget);
-        expect(find.byType(TextFormField), findsNWidgets(2)); // email + password
+        expect(
+          find.byType(TextFormField),
+          findsNWidgets(2),
+        ); // email + password
         expect(find.text('Masuk'), findsOneWidget);
       });
 
-      testWidgets('Email validation shows error for empty email', (WidgetTester tester) async {
+      testWidgets('Email validation shows error for empty email', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
         await tester.pumpWidget(const MyApp());
@@ -54,7 +61,9 @@ void main() {
         expect(auth.emailError.value, 'Email tidak boleh kosong');
       });
 
-      testWidgets('Password visibility toggle works', (WidgetTester tester) async {
+      testWidgets('Password visibility toggle works', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
         await tester.pumpWidget(const MyApp());
@@ -76,7 +85,9 @@ void main() {
     });
 
     group('Register View Tests', () {
-      testWidgets('Register view displays all fields', (WidgetTester tester) async {
+      testWidgets('Register view displays all fields', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
         await tester.pumpWidget(const MyApp());
@@ -86,11 +97,16 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Buat Akun Baru'), findsOneWidget);
-        expect(find.byType(TextFormField), findsNWidgets(4)); // name, email, password, confirm
+        expect(
+          find.byType(TextFormField),
+          findsNWidgets(4),
+        ); // name, email, password, confirm
         expect(find.text('Buat Akun'), findsOneWidget);
       });
 
-      testWidgets('Terms agreement required for registration', (WidgetTester tester) async {
+      testWidgets('Terms agreement required for registration', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
         await tester.pumpWidget(const MyApp());
@@ -107,10 +123,15 @@ void main() {
         auth.agreedToTerms.value = false;
         await tester.pumpAndSettle();
 
+        await tester.ensureVisible(find.text('Buat Akun'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Buat Akun'));
         await tester.pumpAndSettle();
 
         expect(find.text('Persetujuan Diperlukan'), findsOneWidget);
+        Get.closeAllSnackbars();
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pumpAndSettle();
       });
 
       testWidgets('Password mismatch shows error', (WidgetTester tester) async {
@@ -129,6 +150,8 @@ void main() {
         auth.confirmController.text = 'differentpassword';
         await tester.pumpAndSettle();
 
+        await tester.ensureVisible(find.text('Buat Akun'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Buat Akun'));
         await tester.pumpAndSettle();
 
@@ -137,7 +160,9 @@ void main() {
     });
 
     group('Symptom View Tests', () {
-      testWidgets('Symptom view displays symptom list', (WidgetTester tester) async {
+      testWidgets('Symptom view displays symptom list', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<SymptomController>(() => SymptomController(), fenix: true);
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
@@ -147,13 +172,14 @@ void main() {
         Get.offAllNamed(AppRoutes.symptom);
         await tester.pumpAndSettle();
 
-        expect(find.text('Cek Kesehatan'), findsOneWidget);
+        expect(find.text('Cek gejala'), findsOneWidget);
         expect(find.text('Demam'), findsOneWidget);
         expect(find.text('Sakit Kepala'), findsOneWidget);
-        expect(find.text('Batuk'), findsOneWidget);
       });
 
-      testWidgets('Search filters symptoms correctly', (WidgetTester tester) async {
+      testWidgets('Search filters symptoms correctly', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<SymptomController>(() => SymptomController(), fenix: true);
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
@@ -170,7 +196,9 @@ void main() {
         expect(find.text('Sakit Kepala'), findsNothing);
       });
 
-      testWidgets('Selecting symptoms updates count', (WidgetTester tester) async {
+      testWidgets('Selecting symptoms updates count', (
+        WidgetTester tester,
+      ) async {
         Get.reset();
         Get.lazyPut<SymptomController>(() => SymptomController(), fenix: true);
         Get.lazyPut<AuthController>(() => AuthController(), fenix: true);

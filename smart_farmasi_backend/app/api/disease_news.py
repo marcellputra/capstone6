@@ -40,6 +40,7 @@ WHO_OUTBREAKS_URL = "https://www.who.int/api/news/outbreaks"
 CDC_RSS_URL = "https://tools.cdc.gov/api/v2/resources/media/316422.rss"
 KEMENKES_RSS_URL = "https://kemkes.go.id/id/rss/article/rilis-berita"
 NEWSAPI_EVERYTHING_URL = "https://newsapi.org/v2/everything"
+NEWSAPI_TOP_HEADLINES_URL = "https://newsapi.org/v2/top-headlines"
 GOOGLE_TRENDS_RSS_URL = "https://trends.google.com/trending/rss?geo={geo}"
 GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss/search?q={query}&hl={hl}&gl={gl}&ceid={ceid}"
 
@@ -50,20 +51,20 @@ SOURCE_KIND_PER_REGION_LIMIT = 2
 SOURCE_NAME_PER_REGION_LIMIT = 2
 
 INDONESIA_NEWS_QUERY = (
-    "(penyakit OR virus OR wabah OR kesehatan OR hantavirus OR "
-    "\"flu burung\" OR DBD OR campak) Indonesia when:2d"
+    "(penyakit OR virus OR wabah OR kesehatan OR infeksi OR vaksin OR "
+    "imunisasi OR \"kesehatan masyarakat\") Indonesia when:2d"
 )
 GLOBAL_NEWS_QUERY = (
-    "(disease OR virus OR outbreak OR health OR hantavirus OR "
-    "\"avian flu\" OR mpox OR dengue) when:2d"
+    "(disease OR virus OR outbreak OR health OR infection OR vaccine OR "
+    "\"public health\") when:2d"
 )
 NEWSAPI_INDONESIA_QUERY = (
-    "penyakit OR virus OR wabah OR hantavirus OR \"flu burung\" OR "
-    "DBD OR campak OR infeksi OR vaksin OR imunisasi"
+    "penyakit OR virus OR wabah OR kesehatan OR infeksi OR vaksin OR "
+    "imunisasi OR demam"
 )
 NEWSAPI_GLOBAL_QUERY = (
-    "disease OR virus OR outbreak OR hantavirus OR \"avian flu\" OR "
-    "mpox OR dengue OR infection OR vaccine"
+    "disease OR virus OR outbreak OR health OR infection OR vaccine OR "
+    "\"public health\""
 )
 
 HIGH_ALERT_KEYWORDS = [
@@ -100,13 +101,18 @@ DISEASE_SIGNAL_KEYWORDS = sorted(
 BLOCKED_NEWS_KEYWORDS = [
     "malware", "trojan", "ransomware", "computer virus", "win32",
     "movie", "film", "cannes", "premiere", "album", "song", "game",
-    "trump", "white house", "football", "crypto",
+    "sinopsis", "tayang", "malam ini", "trans tv", "bioskop", "trailer",
+    "serial", "drama", "aktor", "aktris", "actor", "actress",
+    "dominic cooper", "stratton", "trump", "white house", "football",
+    "crypto",
 ]
 BLOCKED_SOURCE_NAMES = {
     "Globalresearch.ca",
+    "Vidio",
 }
 
 SOURCE_BASE_SCORE = {
+    "newsapi_top": 52,
     "newsapi": 44,
     "google_trends": 40,
     "google_news": 35,
@@ -353,7 +359,7 @@ def _build_news_item(
     hits = _health_hits(title, summary)
     disease_hits = _disease_signal_hits(title, summary)
 
-    if source_kind in {"google_news", "google_trends", "newsapi"} and not hits:
+    if source_kind in {"google_news", "google_trends", "newsapi", "newsapi_top"} and not hits:
         return None
     if source_kind == "newsapi" and not disease_hits:
         return None
@@ -363,6 +369,8 @@ def _build_news_item(
     score += _recency_score(published_at, now)
     score += min(len(hits) * 3, 15)
     score += _traffic_score(traffic)
+    if image_url:
+        score += 4
     if alert_level == "high":
         score += 12
     elif alert_level == "medium":
@@ -409,8 +417,8 @@ def _sort_key(item: dict) -> tuple:
     published_at = item.get("published_at") or datetime.min
     has_image = 1 if item.get("image_url") else 0
     return (
-        has_image,
         item.get("trend_score", 0),
+        has_image,
         published_at,
     )
 
@@ -497,8 +505,8 @@ def _prune_disease_news_cache(max_rows: int = ACTIVE_NEWS_TOTAL_LIMIT) -> int:
             DiseaseNews.query
             .filter_by(is_active=True, region_scope=region_scope)
             .order_by(
-                has_image.desc(),
                 DiseaseNews.trend_score.desc(),
+                has_image.desc(),
                 DiseaseNews.published_at.desc(),
                 DiseaseNews.fetched_at.desc(),
             )
@@ -520,8 +528,8 @@ def _prune_disease_news_cache(max_rows: int = ACTIVE_NEWS_TOTAL_LIMIT) -> int:
         remaining = (
             remaining_query
             .order_by(
-                has_image.desc(),
                 DiseaseNews.trend_score.desc(),
+                has_image.desc(),
                 DiseaseNews.published_at.desc(),
                 DiseaseNews.fetched_at.desc(),
             )
@@ -645,6 +653,60 @@ def _fetch_newsapi(region_scope: str) -> list[dict]:
         return results
     except Exception as exc:
         logger.warning("NewsAPI %s fetch failed: %s", region_scope, exc)
+        return []
+
+
+def _fetch_newsapi_top_headlines(region_scope: str) -> list[dict]:
+    api_key = current_app.config.get("NEWS_API_KEY") or ""
+    if not api_key:
+        logger.info("NewsAPI top-headlines skipped: NEWS_API_KEY is not configured.")
+        return []
+
+    country_code = "id" if region_scope == "indonesia" else "us"
+    country = "Indonesia" if region_scope == "indonesia" else "Global"
+
+    try:
+        resp = requests.get(
+            NEWSAPI_TOP_HEADLINES_URL,
+            params={
+                "apiKey": api_key,
+                "country": country_code,
+                "category": "health",
+                "pageSize": 20,
+            },
+            timeout=REQUEST_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        if data.get("status") != "ok":
+            logger.warning("NewsAPI top-headlines %s returned: %s", region_scope, data)
+            return []
+
+        results = []
+        for article in data.get("articles", [])[:20]:
+            source = article.get("source") or {}
+            source_name = source.get("name") or "NewsAPI"
+            if source_name in BLOCKED_SOURCE_NAMES:
+                continue
+            item = _build_news_item(
+                title=article.get("title") or "",
+                summary=article.get("description") or article.get("content") or "",
+                source_name=source_name,
+                source_url=article.get("url") or "",
+                image_url=article.get("urlToImage") or "",
+                source_kind="newsapi_top",
+                region_scope=region_scope,
+                country=country,
+                published_at=_parse_datetime(article.get("publishedAt")),
+            )
+            if item:
+                results.append(item)
+
+        logger.info("NewsAPI top-headlines %s: fetched %d health items", region_scope, len(results))
+        return results
+    except Exception as exc:
+        logger.warning("NewsAPI top-headlines %s fetch failed: %s", region_scope, exc)
         return []
 
 
@@ -880,10 +942,12 @@ def fetch_and_store_disease_news(app=None):
         all_items: list[dict] = []
 
         fetchers = [
+            lambda: _fetch_newsapi_top_headlines("indonesia"),
             lambda: _fetch_newsapi("indonesia"),
             lambda: _fetch_google_news("indonesia"),
             lambda: _fetch_google_trends("indonesia"),
             _fetch_kemenkes_rss,
+            lambda: _fetch_newsapi_top_headlines("international"),
             lambda: _fetch_newsapi("international"),
             lambda: _fetch_google_news("international"),
             lambda: _fetch_google_trends("international"),
@@ -990,8 +1054,8 @@ def _top_news_for_region(region_scope: str):
     return (
         DiseaseNews.query.filter_by(is_active=True, region_scope=region_scope)
         .order_by(
-            has_image.desc(),
             DiseaseNews.trend_score.desc(),
+            has_image.desc(),
             DiseaseNews.published_at.desc(),
             DiseaseNews.fetched_at.desc(),
         )

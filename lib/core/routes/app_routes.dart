@@ -12,4 +12,5 @@ class AppRoutes {
   static const scan = '/scan';
   static const chatbot = '/chatbot';
   static const profile = '/profile';
+  static const editProfile = '/profile/edit';
 }

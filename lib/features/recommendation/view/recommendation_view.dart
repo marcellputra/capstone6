@@ -1,41 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_ui_components.dart';
 import '../controller/recommendation_controller.dart';
 
-class RecommendationView extends StatefulWidget {
+class RecommendationView extends StatelessWidget {
   const RecommendationView({super.key});
-
-  @override
-  State<RecommendationView> createState() => _RecommendationViewState();
-}
-
-class _RecommendationViewState extends State<RecommendationView>
-    with TickerProviderStateMixin {
-  late AnimationController _staggerController;
-
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
-
-    _staggerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _staggerController.forward();
-  }
-
-  @override
-  void dispose() {
-    _staggerController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,406 +15,98 @@ class _RecommendationViewState extends State<RecommendationView>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverAppBar(
-            expandedHeight: 160,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            leading: GestureDetector(
-              onTap: () => Get.back(),
-              child: Container(
-                margin: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    size: 18, color: Colors.white),
+      appBar: AppBar(
+        title: const Text('Arahan obat'),
+        leading: IconButton(
+          onPressed: Get.back,
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+        ),
+      ),
+      body: Obx(() {
+        if (controller.results.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(
+              child: EmptyStateCard(
+                icon: Icons.medication_outlined,
+                assetPath: 'assets/illustrations/symptom_empty.png',
+                title: 'Belum ada rekomendasi',
+                message:
+                    'Pilih beberapa gejala yang paling sesuai agar SmartFarmasi bisa menampilkan arahan obat.',
+                actionLabel: 'Pilih gejala',
+                onAction: Get.back,
               ),
             ),
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'Hasil Analisis',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(gradient: AppTheme.heroGradient),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: -40,
-                      right: -40,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.07),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 60,
-                      left: 20,
-                      child: Obx(
-                        () => Text(
-                          '${controller.results.length} rekomendasi obat ditemukan',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-        body: Obx(() {
-          if (controller.results.isEmpty) {
-            return _buildEmpty();
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-            itemCount: controller.results.length,
-            itemBuilder: (context, index) {
-              return _buildRecommendationCard(
-                controller.results[index],
-                index,
-              );
-            },
           );
-        }),
-      ),
-    );
-  }
+        }
 
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLighter,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.search_off_rounded,
-                size: 60, color: AppColors.primary),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Tidak ada rekomendasi',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coba pilih lebih banyak gejala\nuntuk mendapatkan hasil yang lebih baik.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () => Get.back(),
-            icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('Kembali & Pilih Gejala'),
-          ),
-        ],
-      ),
-    );
-  }
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+          itemCount: controller.results.length + 2,
+          separatorBuilder: (_, _) => const SizedBox(height: 14),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return _ResultHero(count: controller.results.length);
+            }
+            if (index == 1) {
+              return const AppInfoBanner(
+                icon: Icons.health_and_safety_rounded,
+                title: 'Gunakan dengan bijak',
+                color: AppColors.amber,
+                message:
+                    'Rekomendasi ini bersifat edukasi. Segera konsultasi jika gejala berat, berulang, atau tidak membaik.',
+              );
+            }
 
-  Widget _buildRecommendationCard(Map<String, dynamic> item, int index) {
-    final score = (item['score'] as double);
-    final scorePercent = (score * 100).toInt();
-
-    Color scoreColor;
-    String scoreLabel;
-    Color scoreBg;
-    if (score >= 0.8) {
-      scoreColor = AppColors.success;
-      scoreBg = const Color(0xFFECFDF5);
-      scoreLabel = 'Sangat Cocok';
-    } else if (score >= 0.5) {
-      scoreColor = AppColors.warning;
-      scoreBg = const Color(0xFFFFFBEB);
-      scoreLabel = 'Cukup Cocok';
-    } else {
-      scoreColor = AppColors.error;
-      scoreBg = const Color(0xFFFEF2F2);
-      scoreLabel = 'Perlu Konsultasi';
-    }
-
-    final animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _staggerController,
-        curve: Interval(
-          (index * 0.15).clamp(0.0, 0.8),
-          ((index * 0.15) + 0.4).clamp(0.0, 1.0),
-          curve: Curves.easeOutCubic,
-        ),
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 30 * (1 - animation.value)),
-          child: Opacity(opacity: animation.value, child: child),
+            final item = controller.results[index - 2];
+            return _MedicineCard(item: item);
+          },
         );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drug icon
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLighter,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.medication_rounded,
-                        color: AppColors.primary, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['name'],
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item['desc'],
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Score badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: scoreBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          '$scorePercent%',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: scoreColor,
-                          ),
-                        ),
-                        Text(
-                          'Cocok',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: scoreColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Tingkat Kecocokan',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: scoreBg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          scoreLabel,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: scoreColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, _) => LinearProgressIndicator(
-                        value: score * animation.value,
-                        backgroundColor: const Color(0xFFF0F0F0),
-                        valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
-                        minHeight: 8,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-
-            // Details
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _buildDetailRow(
-                    Icons.info_outline_rounded,
-                    'Efek Samping',
-                    item['side_effect'],
-                    AppColors.info,
-                    const Color(0xFFEFF6FF),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildWarningBox(item['warning']),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.location_on_rounded, size: 16),
-                          label: const Text('Apotek Terdekat'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 44),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            textStyle: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.shopping_cart_outlined, size: 16),
-                          label: const Text('Beli Sekarang'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(0, 44),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            textStyle: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      }),
     );
   }
+}
 
-  Widget _buildDetailRow(
-    IconData icon,
-    String label,
-    String value,
-    Color iconColor,
-    Color bgColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
+class _ResultHero extends StatelessWidget {
+  final int count;
+
+  const _ResultHero({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return LiquidCard(
+      borderRadius: BorderRadius.circular(28),
+      padding: const EdgeInsets.all(18),
+      gradient: AppTheme.blueGradient,
       child: Row(
         children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(width: 10),
+          const GradientIconBox(
+            icon: Icons.medication_liquid_rounded,
+            color: AppColors.cyan,
+            size: 54,
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  '$count opsi ditemukan',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: iconColor,
-                    letterSpacing: 0.3,
+                    fontSize: 21,
+                    height: 1.12,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 5),
                 Text(
-                  value,
+                  'Diurutkan dari kecocokan gejala tertinggi.',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.78),
                   ),
                 ),
               ],
@@ -452,41 +116,217 @@ class _RecommendationViewState extends State<RecommendationView>
       ),
     );
   }
+}
 
-  Widget _buildWarningBox(String warning) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFECACA), width: 1),
+class _MedicineCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+
+  const _MedicineCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final score = item['score'] as double;
+    final scorePercent = (score * 100).round();
+    final scoreColor = score >= 0.75
+        ? AppColors.success
+        : score >= 0.45
+        ? AppColors.amber
+        : AppColors.error;
+    final matched = (item['matchedSymptoms'] as List<dynamic>? ?? const [])
+        .cast<String>();
+
+    return LiquidCard(
+      borderRadius: BorderRadius.circular(26),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const GradientIconBox(
+                  icon: Icons.medication_rounded,
+                  color: AppColors.primary,
+                  size: 50,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['name'].toString(),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        item['type'].toString(),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                StatusPill(
+                  label: '$scorePercent%',
+                  color: scoreColor,
+                  icon: Icons.check_circle_rounded,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: score,
+                minHeight: 8,
+                color: scoreColor,
+                backgroundColor: AppColors.surfaceVariant,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Text(
+              item['reason'].toString(),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                height: 1.4,
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+          if (matched.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: matched
+                    .map(
+                      (symptom) =>
+                          StatusPill(label: symptom, color: AppColors.accent),
+                    )
+                    .toList(),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _InfoRow(
+                  icon: Icons.info_outline_rounded,
+                  label: 'Indikasi',
+                  value: item['indication'].toString(),
+                ),
+                _InfoRow(
+                  icon: Icons.local_hospital_outlined,
+                  label: 'Aturan pakai',
+                  value: item['dose'].toString(),
+                ),
+                _InfoRow(
+                  icon: Icons.personal_injury_outlined,
+                  label: 'Efek samping',
+                  value: item['side_effect'].toString(),
+                ),
+                const SizedBox(height: 10),
+                AppInfoBanner(
+                  icon: Icons.warning_amber_rounded,
+                  title: 'Perhatian',
+                  color: AppColors.error,
+                  message: item['warning'].toString(),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showUnavailable('Cari apotek'),
+                        icon: const Icon(Icons.location_on_outlined, size: 18),
+                        label: const Text('Cari apotek'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _showUnavailable('Detail obat'),
+                        icon: const Icon(Icons.article_outlined, size: 18),
+                        label: const Text('Detail obat'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  void _showUnavailable(String title) {
+    Get.snackbar(
+      title,
+      'Fitur ini akan aktif setelah data obat dan apotek tersedia.',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 14,
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              size: 18, color: AppColors.error),
+          Icon(icon, size: 18, color: AppColors.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'PERINGATAN',
+                  label,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.error,
-                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textTertiary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  warning,
+                  value,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
-                    color: const Color(0xFF991B1B),
-                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,6 +48,45 @@ class AuthController extends GetxController {
     confirmController.dispose();
     otpController.dispose();
     super.onClose();
+  }
+
+  Map<String, dynamic> _body(Response response) =>
+      ApiProvider.bodyAsMap(response);
+
+  String _message(
+    Response response, {
+    String fallback = 'Terjadi kesalahan. Silakan coba lagi.',
+  }) {
+    return ApiProvider.messageFromResponse(response, fallback: fallback);
+  }
+
+  String _connectionMessage([Object? error]) {
+    return 'Server tidak dapat dihubungi. Pastikan internet aktif, backend berjalan, dan URL ngrok masih valid.';
+  }
+
+  String _googleErrorMessage(Object error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'network-request-failed':
+          return 'Koneksi internet bermasalah saat menghubungi Google.';
+        case 'account-exists-with-different-credential':
+          return 'Email ini sudah terhubung dengan metode login lain.';
+        case 'invalid-credential':
+          return 'Token Google tidak valid. Silakan coba login ulang.';
+        default:
+          return error.message ?? 'Login Google gagal. Silakan coba lagi.';
+      }
+    }
+    if (error is PlatformException) {
+      if (error.code == 'sign_in_failed') {
+        return 'Login Google gagal. Pastikan SHA-1/SHA-256 debug dan release sudah terdaftar di Firebase.';
+      }
+      if (error.code == 'network_error') {
+        return 'Koneksi internet bermasalah saat login Google.';
+      }
+      return error.message ?? 'Login Google gagal. Silakan coba lagi.';
+    }
+    return 'Login Google gagal. Periksa koneksi internet dan konfigurasi Firebase.';
   }
 
   void togglePasswordVisibility() =>
@@ -333,24 +373,38 @@ class AuthController extends GetxController {
         emailController.text.trim(),
         passwordController.text,
       );
+      final body = _body(response);
 
       if (response.status.isOk) {
-        token.value = response.body['token'];
-        userData.value = response.body['user'];
+        token.value = body['token']?.toString() ?? '';
+        userData.value = body['user'] is Map
+            ? Map<String, dynamic>.from(body['user'])
+            : <String, dynamic>{};
         isLogin.value = true;
 
         Get.offAllNamed(AppRoutes.home);
       } else {
-        String message = response.body?['message'] ?? 'Login Gagal';
-        if (response.body?['can_create_app_password'] == true) {
-          final email = (response.body?['email'] ?? emailController.text.trim())
+        final message = _message(response, fallback: 'Login Gagal');
+        if (body['can_create_app_password'] == true) {
+          final email = (body['email'] ?? emailController.text.trim())
               .toString();
           _showGoogleAccountChoice(email: email, message: message);
           return;
         }
         if (response.statusCode == 403 &&
-            response.body?['requires_verification'] == true) {
-          final email = (response.body?['email'] ?? emailController.text.trim())
+            body['action'] == 'reactivate_prompt') {
+          final email = (body['email'] ?? emailController.text.trim())
+              .toString();
+          _showReactivationPrompt(
+            email: email,
+            provider: body['provider']?.toString() ?? 'email',
+            password: passwordController.text,
+          );
+          return;
+        }
+        if (response.statusCode == 403 &&
+            body['requires_verification'] == true) {
+          final email = (body['email'] ?? emailController.text.trim())
               .toString();
           prepareOtpVerification(email);
           Get.toNamed(AppRoutes.verifyOtp, arguments: {'email': email});
@@ -375,7 +429,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Login Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -410,16 +464,17 @@ class AuthController extends GetxController {
         passwordController.text,
         null,
       );
+      final body = _body(response);
 
       if (response.status.isOk) {
-        final requiresOtp = response.body?['requires_otp'] != false;
+        final requiresOtp = body['requires_otp'] != false;
         if (!requiresOtp) {
           passwordController.clear();
           confirmController.clear();
           Get.offAllNamed(AppRoutes.login);
           Get.snackbar(
             'Registrasi Berhasil',
-            response.body?['message'] ??
+            body['message']?.toString() ??
                 'Akun berhasil dibuat tanpa verifikasi OTP.',
             backgroundColor: Colors.green.shade600,
             colorText: Colors.white,
@@ -428,21 +483,21 @@ class AuthController extends GetxController {
           return;
         }
 
-        final email = (response.body?['email'] ?? emailController.text.trim())
-            .toString();
+        final email = (body['email'] ?? emailController.text.trim()).toString();
         prepareOtpVerification(email);
         Get.toNamed(AppRoutes.verifyOtp, arguments: {'email': email});
         Get.snackbar(
           'Kode OTP Terkirim',
-          response.body?['message'] ?? 'Kode OTP telah dikirim ke email Anda.',
+          body['message']?.toString() ??
+              'Kode OTP telah dikirim ke email Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
-        String message = response.body?['message'] ?? 'Pendaftaran Gagal';
-        if (response.body?['can_create_app_password'] == true) {
-          final email = (response.body?['email'] ?? emailController.text.trim())
+        final message = _message(response, fallback: 'Pendaftaran Gagal');
+        if (body['can_create_app_password'] == true) {
+          final email = (body['email'] ?? emailController.text.trim())
               .toString();
           _showGoogleAccountChoice(email: email, message: message);
           return;
@@ -458,7 +513,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Pendaftaran Gagal',
-        'Koneksi bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -492,6 +547,7 @@ class AuthController extends GetxController {
         verificationEmail,
         otpController.text.trim(),
       );
+      final body = _body(response);
 
       if (response.status.isOk) {
         otpController.clear();
@@ -500,13 +556,13 @@ class AuthController extends GetxController {
         Get.offAllNamed(AppRoutes.login);
         Get.snackbar(
           'Verifikasi Berhasil',
-          response.body?['message'] ?? 'Email berhasil diverifikasi.',
+          body['message']?.toString() ?? 'Email berhasil diverifikasi.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
-        final message = response.body?['message'] ?? 'Verifikasi OTP gagal';
+        final message = _message(response, fallback: 'Verifikasi OTP gagal');
         otpError.value = message;
         Get.snackbar(
           'Verifikasi Gagal',
@@ -519,7 +575,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Verifikasi Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -546,13 +602,14 @@ class AuthController extends GetxController {
     isResendLoading.value = true;
     try {
       final response = await _apiProvider.resendOtp(verificationEmail);
+      final body = _body(response);
 
       if (response.status.isOk) {
         otpController.clear();
         otpError.value = '';
         Get.snackbar(
           'Kode OTP Baru',
-          response.body?['message'] ??
+          body['message']?.toString() ??
               'Kode OTP baru telah dikirim ke email Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
@@ -561,7 +618,7 @@ class AuthController extends GetxController {
         return true;
       }
 
-      final message = response.body?['message'] ?? 'Gagal mengirim ulang OTP';
+      final message = _message(response, fallback: 'Gagal mengirim ulang OTP');
       Get.snackbar(
         'Resend Gagal',
         message,
@@ -573,7 +630,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Resend Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -599,10 +656,12 @@ class AuthController extends GetxController {
 
     try {
       final response = await _apiProvider.forgotPassword(normalizedEmail);
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'Kode OTP Terkirim',
-          response.body?['message'] ?? 'Kode OTP telah dikirim ke email Anda.',
+          body['message']?.toString() ??
+              'Kode OTP telah dikirim ke email Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -610,12 +669,13 @@ class AuthController extends GetxController {
         return true;
       }
 
-      if (response.body?['can_create_app_password'] == true) {
-        final email = (response.body?['email'] ?? normalizedEmail).toString();
+      if (body['can_create_app_password'] == true) {
+        final email = (body['email'] ?? normalizedEmail).toString();
         _showGoogleAccountChoice(
           email: email,
           message:
-              response.body?['message'] ?? 'Akun ini terhubung dengan Google.',
+              body['message']?.toString() ??
+              'Akun ini terhubung dengan Google.',
           preferAppPassword: true,
         );
         return false;
@@ -623,7 +683,7 @@ class AuthController extends GetxController {
 
       Get.snackbar(
         'Gagal Mengirim OTP',
-        response.body?['message'] ?? 'OTP reset password gagal dikirim.',
+        _message(response, fallback: 'OTP reset password gagal dikirim.'),
         backgroundColor: Colors.orange.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -632,7 +692,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Koneksi Bermasalah',
-        'Tidak bisa menghubungi server: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -685,10 +745,11 @@ class AuthController extends GetxController {
         password,
         passwordConfirmation,
       );
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'Password Berhasil Direset',
-          response.body?['message'] ?? 'Silakan login dengan password baru.',
+          body['message']?.toString() ?? 'Silakan login dengan password baru.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -698,7 +759,7 @@ class AuthController extends GetxController {
 
       Get.snackbar(
         'Reset Password Gagal',
-        response.body?['message'] ?? 'Kode OTP atau password tidak valid.',
+        _message(response, fallback: 'Kode OTP atau password tidak valid.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -707,7 +768,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Reset Password Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -731,10 +792,12 @@ class AuthController extends GetxController {
 
     try {
       final response = await _apiProvider.requestAppPassword(normalizedEmail);
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'Kode OTP Terkirim',
-          response.body?['message'] ?? 'Kode OTP telah dikirim ke email Anda.',
+          body['message']?.toString() ??
+              'Kode OTP telah dikirim ke email Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -744,7 +807,7 @@ class AuthController extends GetxController {
 
       Get.snackbar(
         'Gagal Mengirim OTP',
-        response.body?['message'] ?? 'OTP password aplikasi gagal dikirim.',
+        _message(response, fallback: 'OTP password aplikasi gagal dikirim.'),
         backgroundColor: Colors.orange.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -753,7 +816,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Koneksi Bermasalah',
-        'Tidak bisa menghubungi server: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -782,20 +845,21 @@ class AuthController extends GetxController {
         email.trim(),
         otp.trim(),
       );
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'OTP Terverifikasi',
-          response.body?['message'] ?? 'Silakan buat password aplikasi Anda.',
+          body['message']?.toString() ?? 'Silakan buat password aplikasi Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
-        return response.body?['setup_token']?.toString();
+        return body['setup_token']?.toString();
       }
 
       Get.snackbar(
         'Verifikasi OTP Gagal',
-        response.body?['message'] ?? 'Kode OTP tidak valid.',
+        _message(response, fallback: 'Kode OTP tidak valid.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -804,7 +868,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Verifikasi OTP Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -857,16 +921,17 @@ class AuthController extends GetxController {
         password,
         passwordConfirmation,
       );
+      final body = _body(response);
       if (response.status.isOk) {
-        if (response.body?['token'] != null && response.body?['user'] != null) {
-          token.value = response.body['token'];
-          userData.value = response.body['user'];
+        if (body['token'] != null && body['user'] is Map) {
+          token.value = body['token'].toString();
+          userData.value = Map<String, dynamic>.from(body['user']);
           isLogin.value = true;
         }
 
         Get.snackbar(
           'Password Aplikasi Dibuat',
-          response.body?['message'] ??
+          body['message']?.toString() ??
               'Sekarang Anda bisa login memakai email dan password aplikasi.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
@@ -877,7 +942,7 @@ class AuthController extends GetxController {
 
       Get.snackbar(
         'Gagal Membuat Password',
-        response.body?['message'] ?? 'Kode OTP atau password tidak valid.',
+        _message(response, fallback: 'Kode OTP atau password tidak valid.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -886,7 +951,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Gagal Membuat Password',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -906,10 +971,11 @@ class AuthController extends GetxController {
         newEmail.trim(),
         currentPassword,
       );
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'OTP Email Baru Terkirim',
-          response.body?['message'] ?? 'Cek email baru Anda.',
+          body['message']?.toString() ?? 'Cek email baru Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -918,7 +984,7 @@ class AuthController extends GetxController {
       }
       Get.snackbar(
         'Gagal Mengirim OTP',
-        response.body?['message'] ?? 'Email tidak bisa diganti.',
+        _message(response, fallback: 'Email tidak bisa diganti.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -927,7 +993,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Koneksi Bermasalah',
-        'Tidak bisa menghubungi server: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -947,13 +1013,14 @@ class AuthController extends GetxController {
         newEmail.trim(),
         otp.trim(),
       );
+      final body = _body(response);
       if (response.status.isOk) {
-        if (response.body?['user'] != null) {
-          userData.value = response.body['user'];
+        if (body['user'] is Map) {
+          userData.value = Map<String, dynamic>.from(body['user']);
         }
         Get.snackbar(
           'Email Berhasil Diganti',
-          response.body?['message'] ?? 'Email akun Anda sudah diperbarui.',
+          body['message']?.toString() ?? 'Email akun Anda sudah diperbarui.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -962,7 +1029,7 @@ class AuthController extends GetxController {
       }
       Get.snackbar(
         'Verifikasi Email Gagal',
-        response.body?['message'] ?? 'Kode OTP tidak valid.',
+        _message(response, fallback: 'Kode OTP tidak valid.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -971,7 +1038,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Verifikasi Email Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -993,10 +1060,11 @@ class AuthController extends GetxController {
         newPassword,
         newPasswordConfirmation,
       );
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'OTP Ganti Password Terkirim',
-          response.body?['message'] ?? 'Cek email Anda.',
+          body['message']?.toString() ?? 'Cek email Anda.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -1005,7 +1073,7 @@ class AuthController extends GetxController {
       }
       Get.snackbar(
         'Gagal Mengirim OTP',
-        response.body?['message'] ?? 'Password tidak bisa diganti.',
+        _message(response, fallback: 'Password tidak bisa diganti.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -1014,7 +1082,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Koneksi Bermasalah',
-        'Tidak bisa menghubungi server: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -1038,10 +1106,11 @@ class AuthController extends GetxController {
         newPasswordConfirmation,
         otp.trim(),
       );
+      final body = _body(response);
       if (response.status.isOk) {
         Get.snackbar(
           'Password Berhasil Diganti',
-          response.body?['message'] ??
+          body['message']?.toString() ??
               'Gunakan password baru saat login berikutnya.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
@@ -1051,7 +1120,7 @@ class AuthController extends GetxController {
       }
       Get.snackbar(
         'Ganti Password Gagal',
-        response.body?['message'] ?? 'Kode OTP atau password tidak valid.',
+        _message(response, fallback: 'Kode OTP atau password tidak valid.'),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -1060,7 +1129,7 @@ class AuthController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Ganti Password Gagal',
-        'Koneksi ke server bermasalah: $e',
+        _connectionMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -1069,7 +1138,251 @@ class AuthController extends GetxController {
     }
   }
 
-  void logout() {
+  Future<bool> requestDeleteAccountOtp() async {
+    if (token.value.isEmpty) return false;
+    try {
+      final response = await _apiProvider.requestDeleteAccountOtp(token.value);
+      final body = _body(response);
+      if (response.status.isOk) {
+        Get.snackbar(
+          'Kode OTP Dikirim',
+          body['message']?.toString() ?? 'Cek email Anda untuk mendapatkan kode OTP penghapusan akun.',
+          backgroundColor: Colors.green.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return true;
+      }
+      Get.snackbar(
+        'Gagal Mengirim OTP',
+        _message(response, fallback: 'Gagal mengirim kode verifikasi OTP.'),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } catch (e) {
+      Get.snackbar(
+        'Koneksi Bermasalah',
+        _connectionMessage(e),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> confirmDeleteAccount({String? password, String? otpCode}) async {
+    if (token.value.isEmpty) return false;
+    try {
+      final response = await _apiProvider.confirmDeleteAccount(
+        token: token.value,
+        password: password,
+        otpCode: otpCode,
+      );
+      final body = _body(response);
+      if (response.status.isOk) {
+        // Clean local sessions
+        try {
+          await GoogleSignIn().signOut();
+          await FirebaseAuth.instance.signOut();
+        } catch (_) {}
+        isLogin.value = false;
+        token.value = '';
+        userData.value = {};
+
+        Get.offAllNamed(AppRoutes.login);
+        Get.snackbar(
+          'Akun Dinonaktifkan',
+          body['message']?.toString() ?? 'Akun Anda berhasil dinonaktifkan dan akan dihapus permanen dalam 30 hari.',
+          backgroundColor: Colors.orange.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 6),
+        );
+        return true;
+      }
+      Get.snackbar(
+        'Konfirmasi Gagal',
+        _message(response, fallback: 'Gagal menonaktifkan akun Anda. Pastikan data benar.'),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } catch (e) {
+      Get.snackbar(
+        'Koneksi Bermasalah',
+        _connectionMessage(e),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> reactivateAccount({
+    required String email,
+    String? password,
+    String? googleToken,
+  }) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiProvider.reactivateAccount(
+        email: email,
+        password: password,
+        googleToken: googleToken,
+      );
+      final body = _body(response);
+      if (response.status.isOk) {
+        if (body['token'] != null && body['user'] is Map) {
+          token.value = body['token'].toString();
+          userData.value = Map<String, dynamic>.from(body['user']);
+          isLogin.value = true;
+        }
+
+        Get.snackbar(
+          'Akun Diaktifkan Kembali',
+          body['message']?.toString() ?? 'Selamat! Akun Anda telah berhasil dipulihkan.',
+          backgroundColor: Colors.green.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        
+        if (isLogin.value) {
+          Get.offAllNamed(AppRoutes.home);
+        } else {
+          Get.offAllNamed(AppRoutes.login);
+        }
+        return true;
+      }
+      Get.snackbar(
+        'Aktivasi Gagal',
+        _message(response, fallback: 'Gagal mengaktifkan kembali akun Anda.'),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } catch (e) {
+      Get.snackbar(
+        'Koneksi Bermasalah',
+        _connectionMessage(e),
+        backgroundColor: Colors.red.shade600,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void _showReactivationPrompt({
+    required String email,
+    required String provider,
+    String? password,
+    String? googleToken,
+  }) {
+    Get.dialog(
+      Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.restore_from_trash_rounded,
+                    color: Colors.orange.shade700,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Aktifkan Kembali Akun?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Akun Anda saat ini dijadwalkan untuk dihapus secara permanen. Ingin membatalkan penghapusan dan mengaktifkannya kembali sekarang?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () async {
+                    Get.back(); // Close prompt dialog
+                    await reactivateAccount(
+                      email: email,
+                      password: password,
+                      googleToken: googleToken,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Ya, Aktifkan Kembali',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Future<void> logout() async {
+    try {
+      await GoogleSignIn().signOut();
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {
+      // State lokal tetap dibersihkan walaupun sesi Google sudah tidak aktif.
+    }
     isLogin.value = false;
     token.value = '';
     userData.value = {};
@@ -1086,6 +1399,7 @@ class AuthController extends GetxController {
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: kIsWeb ? webClientId : null,
+        serverClientId: kIsWeb ? null : webClientId,
         scopes: ['email', 'profile'],
       );
 
@@ -1105,12 +1419,12 @@ class AuthController extends GetxController {
 
       final UserCredential userCredential = await FirebaseAuth.instance
           .signInWithCredential(credential);
-      final String? idToken = googleAuth.idToken ?? googleAuth.accessToken;
+      final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {
         Get.snackbar(
-          'Error',
-          'Gagal mendapatkan token dari Google',
+          'Login Google Gagal',
+          'Token Google tidak diterima. Pastikan Web Client ID, package name, SHA-1, dan SHA-256 di Firebase sudah sesuai.',
           backgroundColor: Colors.red.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -1124,15 +1438,28 @@ class AuthController extends GetxController {
         googleUser.displayName ?? 'Google User',
         userCredential.user?.uid,
       );
+      final body = _body(response);
 
       if (response.status.isOk) {
-        token.value = response.body['token'];
-        userData.value = response.body['user'];
+        token.value = body['token']?.toString() ?? '';
+        userData.value = body['user'] is Map
+            ? Map<String, dynamic>.from(body['user'])
+            : <String, dynamic>{};
         isLogin.value = true;
 
         Get.offAllNamed(AppRoutes.home);
       } else {
-        String message = response.body?['message'] ?? 'Login Gagal';
+        if (response.statusCode == 403 &&
+            body['action'] == 'reactivate_prompt') {
+          final email = (body['email'] ?? googleUser.email).toString();
+          _showReactivationPrompt(
+            email: email,
+            provider: 'google',
+            googleToken: idToken,
+          );
+          return;
+        }
+        final message = _message(response, fallback: 'Login Google gagal.');
         Get.snackbar(
           'Login Gagal',
           message,
@@ -1143,8 +1470,8 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Gagal masuk dengan Google: $e',
+        'Login Google Gagal',
+        _googleErrorMessage(e),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,

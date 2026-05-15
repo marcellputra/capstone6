@@ -25,10 +25,11 @@ def seed_admin():
                 is_verified=True,
                 email_verified_at=datetime.datetime.utcnow()
             )
-            admin.set_password('admin123')
+            admin_password = os.environ.get('ADMIN_PASSWORD') or 'admin123'
+            admin.set_password(admin_password)
             db.session.add(admin)
             db.session.commit()
-            print(f"Default admin created successfully: {admin_email} / admin123")
+            print(f"Default admin created successfully: {admin_email} / {admin_password}")
 
 if __name__ == '__main__':
     seed_admin()

@@ -1,42 +1,87 @@
 import 'package:get/get.dart';
 
+import 'api_config.dart';
+
 class ApiProvider extends GetConnect {
-  static const String apiBaseUrl =
-      'https://tomasa-ridiculous-klara.ngrok-free.dev';
-  static const String localWebBaseUrl = 'http://127.0.0.1:5000';
+  static String get apiBaseUrl => ApiConfig.baseUrl;
 
   static String proxiedImageUrl(String imageUrl) {
-    if (imageUrl.isEmpty) return '';
-    final encoded = Uri.encodeQueryComponent(imageUrl);
-    final host = Uri.base.host;
-    final isLocalWeb = host == 'localhost' || host == '127.0.0.1';
-    final baseUrl = isLocalWeb ? localWebBaseUrl : apiBaseUrl;
-    return '$baseUrl/api/disease-news/image?url=$encoded';
+    return ApiConfig.proxiedImageUrl(imageUrl);
+  }
+
+  static Map<String, dynamic> bodyAsMap(Response response) {
+    final body = response.body;
+    if (body is Map<String, dynamic>) return body;
+    if (body is Map) return Map<String, dynamic>.from(body);
+    return <String, dynamic>{};
+  }
+
+  static bool boolValue(Response response, String key) {
+    return bodyAsMap(response)[key] == true;
+  }
+
+  static String stringValue(
+    Response response,
+    String key, [
+    String fallback = '',
+  ]) {
+    final value = bodyAsMap(response)[key];
+    return value == null ? fallback : value.toString();
+  }
+
+  static String messageFromResponse(
+    Response? response, {
+    String fallback = 'Terjadi kesalahan. Silakan coba lagi.',
+  }) {
+    if (response == null || response.status.connectionError) {
+      return 'Server tidak dapat dihubungi. Pastikan internet aktif, backend berjalan, dan URL ngrok masih valid.';
+    }
+
+    final body = response.body;
+    if (body is Map) {
+      final message = body['message'] ?? body['error'];
+      if (message != null && message.toString().trim().isNotEmpty) {
+        return message.toString();
+      }
+    }
+
+    if (body is String) {
+      final lowerBody = body.toLowerCase();
+      if (lowerBody.contains('ngrok') || lowerBody.contains('<html')) {
+        return 'Server tidak dapat dihubungi melalui ngrok. Periksa URL ngrok dan pastikan backend aktif.';
+      }
+    }
+
+    switch (response.statusCode) {
+      case 400:
+        return 'Data yang dikirim belum valid.';
+      case 401:
+        return 'Sesi atau kredensial tidak valid. Silakan login ulang.';
+      case 403:
+        return 'Akses ditolak atau akun belum diverifikasi.';
+      case 404:
+        return 'Endpoint server tidak ditemukan.';
+      case 408:
+      case 504:
+        return 'Koneksi ke server timeout. Coba lagi beberapa saat.';
+      case 500:
+      case 502:
+      case 503:
+        return 'Server sedang bermasalah atau tidak aktif.';
+      default:
+        return fallback;
+    }
   }
 
   @override
   void onInit() {
-    // === PILIH SALAH SATU URL DI BAWAH INI ===
-
-    // 1. Opsi Ngrok (Gunakan ini agar tidak perlu ganti-ganti IP)
-    // TODO: Ganti URL di bawah ini dengan URL ngrok kamu yang aktif
-    const String baseUrl = apiBaseUrl;
-
-    // 2. Opsi IP Lokal Laptop (IP yang sekarang: 192.168.1.7)
-    // const String baseUrl = 'http://192.168.1.7:5000';
-
-    // 3. Opsi Emulator Android (Khusus jika pakai emulator bawaan Android Studio)
-    // const String baseUrl = 'http://10.0.2.2:5000';
-
-    // 4. Opsi Localhost (Khusus untuk Flutter Web / Chrome)
-    // const String baseUrl = 'http://127.0.0.1:5000';
-
-    httpClient.baseUrl = baseUrl;
+    httpClient.baseUrl = ApiConfig.baseUrl;
     httpClient.timeout = const Duration(seconds: 15);
+    httpClient.defaultContentType = 'application/json';
 
-    // Bypass Ngrok Browser Warning
     httpClient.addRequestModifier<dynamic>((request) {
       request.headers['ngrok-skip-browser-warning'] = 'true';
+      request.headers['Accept'] = 'application/json';
       return request;
     });
 
@@ -170,6 +215,41 @@ class ApiProvider extends GetConnect {
     );
   }
 
+  Future<Response> requestDeleteAccountOtp(String token) {
+    return post(
+      '/api/account/request-delete-otp',
+      {},
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  Future<Response> confirmDeleteAccount({
+    required String token,
+    String? password,
+    String? otpCode,
+  }) {
+    return post(
+      '/api/account/delete',
+      {
+        if (password != null) 'password': password,
+        if (otpCode != null) 'otp_code': otpCode,
+      },
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  Future<Response> reactivateAccount({
+    required String email,
+    String? password,
+    String? googleToken,
+  }) {
+    return post('/api/account/reactivate', {
+      'email': email,
+      if (password != null) 'password': password,
+      if (googleToken != null) 'google_token': googleToken,
+    });
+  }
+
   // Login
   Future<Response> login(String email, String password) {
     return post('/api/login', {'email': email, 'password': password});
@@ -193,6 +273,42 @@ class ApiProvider extends GetConnect {
   // Get Profile
   Future<Response> getProfile(String token) {
     return get('/api/profile', headers: {'Authorization': 'Bearer $token'});
+  }
+
+  Future<Response> updateProfile(String token, {required String name}) {
+    return put(
+      '/api/profile',
+      {'name': name},
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  Future<Response> uploadProfilePhoto({
+    required String token,
+    required List<int> bytes,
+    required String filename,
+    required String contentType,
+  }) {
+    final form = FormData({
+      'photo': MultipartFile(
+        bytes,
+        filename: filename,
+        contentType: contentType,
+      ),
+    });
+
+    return post(
+      '/api/profile/photo',
+      form,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  Future<Response> deleteProfilePhoto(String token) {
+    return delete(
+      '/api/profile/photo',
+      headers: {'Authorization': 'Bearer $token'},
+    );
   }
 
   // ─── Disease News ───────────────────────────

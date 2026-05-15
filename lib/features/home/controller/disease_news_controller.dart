@@ -7,24 +7,24 @@ class DiseaseNewsController extends GetxController {
 
   // ── State ──────────────────────────────────
   final RxList<DiseaseNewsModel> trendingNews = <DiseaseNewsModel>[].obs;
-  final RxList<DiseaseNewsModel> allNews      = <DiseaseNewsModel>[].obs;
+  final RxList<DiseaseNewsModel> allNews = <DiseaseNewsModel>[].obs;
 
-  final RxBool  isLoadingTrending = false.obs;
-  final RxBool  isLoadingAll      = false.obs;
-  final RxBool  hasError          = false.obs;
-  final RxString errorMessage     = ''.obs;
-  final RxString lastUpdated      = ''.obs;
+  final RxBool isLoadingTrending = false.obs;
+  final RxBool isLoadingAll = false.obs;
+  final RxBool hasError = false.obs;
+  final RxString errorMessage = ''.obs;
+  final RxString lastUpdated = ''.obs;
 
   // ── Filter & pagination for list page ──────
-  final RxString searchQuery    = ''.obs;
-  final RxString filterSource   = ''.obs;
-  final RxString filterLevel    = ''.obs;
-  final RxString filterCountry  = ''.obs;
-  final RxString filterRegion   = ''.obs;
-  final RxString sortBy         = 'latest'.obs;
-  final RxInt    currentPage    = 1.obs;
-  final RxInt    totalPages     = 1.obs;
-  final RxBool   hasMore        = false.obs;
+  final RxString searchQuery = ''.obs;
+  final RxString filterSource = ''.obs;
+  final RxString filterLevel = ''.obs;
+  final RxString filterCountry = ''.obs;
+  final RxString filterRegion = ''.obs;
+  final RxString sortBy = 'latest'.obs;
+  final RxInt currentPage = 1.obs;
+  final RxInt totalPages = 1.obs;
+  final RxBool hasMore = false.obs;
 
   @override
   void onInit() {
@@ -38,26 +38,33 @@ class DiseaseNewsController extends GetxController {
   Future<void> fetchTrending({bool silent = false}) async {
     if (!silent) isLoadingTrending.value = true;
     hasError.value = false;
+    errorMessage.value = '';
 
     try {
-      final response = await _api.get('/api/disease-news/trending');
-      if (response.statusCode == 200 && response.body['success'] == true) {
-        final List data = response.body['data'] ?? [];
-        trendingNews.value =
-            data.map((e) => DiseaseNewsModel.fromJson(e)).toList();
-        final lu = response.body['last_updated'];
+      final response = await _api.getDiseaseNewsTrending();
+      final body = ApiProvider.bodyAsMap(response);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final List data = body['data'] is List ? body['data'] : [];
+        trendingNews.value = data
+            .map((e) => DiseaseNewsModel.fromJson(e))
+            .toList();
+        final lu = body['last_updated'];
         if (lu != null) {
           final dt = DateTime.tryParse(lu);
           if (dt != null) {
-            lastUpdated.value =
-                'Update: ${dt.day}/${dt.month}/${dt.year}';
+            lastUpdated.value = 'Update: ${dt.day}/${dt.month}/${dt.year}';
           }
         }
       } else {
-        _setError('Gagal memuat berita. Coba lagi.');
+        _setError(
+          ApiProvider.messageFromResponse(
+            response,
+            fallback: 'Gagal memuat berita. Coba lagi.',
+          ),
+        );
       }
     } catch (e) {
-      _setError('Tidak dapat terhubung ke server.');
+      _setError('Server tidak dapat dihubungi. Periksa internet dan ngrok.');
     } finally {
       isLoadingTrending.value = false;
     }
@@ -72,6 +79,8 @@ class DiseaseNewsController extends GetxController {
       allNews.clear();
     }
     isLoadingAll.value = true;
+    hasError.value = false;
+    errorMessage.value = '';
 
     try {
       final response = await _api.getDiseaseNewsList(
@@ -84,9 +93,12 @@ class DiseaseNewsController extends GetxController {
         country: filterCountry.value,
         region: filterRegion.value,
       );
-      if (response.statusCode == 200 && response.body['success'] == true) {
-        final List data = response.body['data'] ?? [];
-        final pagination = response.body['pagination'] ?? {};
+      final body = ApiProvider.bodyAsMap(response);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final List data = body['data'] is List ? body['data'] : [];
+        final pagination = body['pagination'] is Map
+            ? Map<String, dynamic>.from(body['pagination'])
+            : <String, dynamic>{};
         final items = data.map((e) => DiseaseNewsModel.fromJson(e)).toList();
 
         if (reset) {
@@ -95,10 +107,17 @@ class DiseaseNewsController extends GetxController {
           allNews.addAll(items);
         }
         totalPages.value = pagination['pages'] ?? 1;
-        hasMore.value    = pagination['has_next'] ?? false;
+        hasMore.value = pagination['has_next'] ?? false;
+      } else {
+        _setError(
+          ApiProvider.messageFromResponse(
+            response,
+            fallback: 'Gagal memuat daftar berita.',
+          ),
+        );
       }
     } catch (e) {
-      _setError('Gagal memuat daftar berita.');
+      _setError('Server tidak dapat dihubungi. Periksa internet dan ngrok.');
     } finally {
       isLoadingAll.value = false;
     }
@@ -118,7 +137,13 @@ class DiseaseNewsController extends GetxController {
     fetchAll();
   }
 
-  void applyFilter({String? source, String? level, String? country, String? region, String? sort}) {
+  void applyFilter({
+    String? source,
+    String? level,
+    String? country,
+    String? region,
+    String? sort,
+  }) {
     if (source != null) filterSource.value = source;
     if (level != null) filterLevel.value = level;
     if (country != null) filterCountry.value = country;
@@ -128,12 +153,12 @@ class DiseaseNewsController extends GetxController {
   }
 
   void clearFilters() {
-    searchQuery.value   = '';
-    filterSource.value  = '';
-    filterLevel.value   = '';
+    searchQuery.value = '';
+    filterSource.value = '';
+    filterLevel.value = '';
     filterCountry.value = '';
-    filterRegion.value  = '';
-    sortBy.value        = 'latest';
+    filterRegion.value = '';
+    sortBy.value = 'latest';
     fetchAll();
   }
 
@@ -142,13 +167,23 @@ class DiseaseNewsController extends GetxController {
   // ─────────────────────────────────────────────
   Future<void> triggerRefresh() async {
     try {
-      await _api.post('/api/disease-news/refresh', {});
-    } catch (_) {}
+      final response = await _api.refreshDiseaseNews();
+      if (!response.status.isOk) {
+        _setError(
+          ApiProvider.messageFromResponse(
+            response,
+            fallback: 'Refresh berita gagal.',
+          ),
+        );
+      }
+    } catch (_) {
+      _setError('Server tidak dapat dihubungi. Periksa internet dan ngrok.');
+    }
     await fetchTrending();
   }
 
   void _setError(String msg) {
-    hasError.value    = true;
+    hasError.value = true;
     errorMessage.value = msg;
   }
 }

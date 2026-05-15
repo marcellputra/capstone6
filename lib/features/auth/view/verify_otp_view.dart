@@ -20,8 +20,10 @@ class _VerifyOtpViewState extends State<VerifyOtpView>
     with TickerProviderStateMixin {
   final auth = Get.find<AuthController>();
 
-  static const int _otpDurationSeconds = 180;   // 3 menit, sesuai OTP_EXPIRES_SECONDS
-  static const int _resendCooldownSeconds = 180; // aktif bersamaan saat OTP expired
+  static const int _otpDurationSeconds =
+      180; // 3 menit, sesuai OTP_EXPIRES_SECONDS
+  static const int _resendCooldownSeconds =
+      180; // aktif bersamaan saat OTP expired
 
   late final AnimationController _slideController;
   late final Animation<Offset> _slideAnim;

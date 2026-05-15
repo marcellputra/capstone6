@@ -3,49 +3,52 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // === PRIMARY PALETTE: Deep Teal-Emerald ===
-  static const Color primary = Color(0xFF0B6E4F);       // Deep emerald green
-  static const Color primaryLight = Color(0xFF1A9970);  // Medium emerald
-  static const Color primaryLighter = Color(0xFFE6F4EF); // Tint/surface
-  static const Color primaryGlow = Color(0xFF00C896);   // Neon green accent
+  static const Color primary = Color(0xFF0B6E4F);
+  static const Color primaryLight = Color(0xFF16A873);
+  static const Color primaryLighter = Color(0xFFE9FFF5);
+  static const Color primaryGlow = Color(0xFF24D39B);
+  static const Color ink = Color(0xFF0D1F1A);
 
-  // === SECONDARY PALETTE: Warm Coral (CTA / Highlights) ===
-  static const Color secondary = Color(0xFFFF6B6B);
-  static const Color secondaryLight = Color(0xFFFFEBEB);
+  static const Color secondary = Color(0xFFFF6F61);
+  static const Color secondaryLight = Color(0xFFFFEEE9);
 
-  // === ACCENT ===
-  static const Color accent = Color(0xFF4ECDC4);        // Teal accent
+  static const Color accent = Color(0xFF3577FF);
+  static const Color amber = Color(0xFFFFB020);
+  static const Color cyan = Color(0xFF00B8D9);
 
-  // === NEUTRALS ===
-  static const Color background = Color(0xFFF8FAFB);
+  static const Color background = Color(0xFFF5F8F6);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF1F5F3);
+  static const Color surfaceVariant = Color(0xFFEDF4F0);
+  static const Color outline = Color(0xFFDCE8E2);
 
-  // === TEXT ===
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textPrimary = ink;
+  static const Color textSecondary = Color(0xFF52615B);
+  static const Color textTertiary = Color(0xFF87938E);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
-  // === SEMANTIC ===
   static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
+  static const Color warning = amber;
   static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
+  static const Color info = accent;
 
-  // === GRADIENTS ===
   static const List<Color> primaryGradientColors = [
-    Color(0xFF0B6E4F),
-    Color(0xFF1A9970),
+    Color(0xFF085C43),
+    Color(0xFF11A46F),
+    Color(0xFF42DFA6),
   ];
   static const List<Color> heroGradientColors = [
-    Color(0xFF06443A),
-    Color(0xFF0B6E4F),
-    Color(0xFF1A9970),
+    Color(0xFF071D19),
+    Color(0xFF0A6847),
+    Color(0xFF18C98C),
   ];
   static const List<Color> cardGradientColors = [
-    Color(0xFFE6F4EF),
-    Color(0xFFF0FAF6),
+    Color(0xFFFFFFFF),
+    Color(0xFFEFFFF7),
+    Color(0xFFFFF6EF),
+  ];
+  static const List<Color> blueGradientColors = [
+    Color(0xFF112A66),
+    Color(0xFF3577FF),
   ];
 }
 
@@ -54,20 +57,28 @@ class AppTheme {
 
   static ThemeData get lightTheme {
     final base = ThemeData.light(useMaterial3: true);
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          primaryContainer: AppColors.primaryLighter,
+          secondary: AppColors.secondary,
+          secondaryContainer: AppColors.secondaryLight,
+          tertiary: AppColors.accent,
+          surface: AppColors.surface,
+          surfaceContainerHighest: AppColors.surfaceVariant,
+          error: AppColors.error,
+          onPrimary: AppColors.textOnPrimary,
+          onSurface: AppColors.textPrimary,
+          outline: AppColors.outline,
+        );
+
     return base.copyWith(
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
-
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
-        primaryContainer: AppColors.primaryLighter,
-        secondary: AppColors.secondary,
-        surface: AppColors.surface,
-        error: AppColors.error,
-        onPrimary: AppColors.textOnPrimary,
-        onSurface: AppColors.textPrimary,
-        onSecondary: AppColors.textOnPrimary,
-      ),
+      colorScheme: colorScheme,
 
       textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme).apply(
         bodyColor: AppColors.textPrimary,
@@ -95,8 +106,34 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: EdgeInsets.zero,
+      ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        height: 74,
+        backgroundColor: AppColors.surface.withValues(alpha: 0.94),
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.ink,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? AppColors.ink : AppColors.textTertiary,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            size: 23,
+            color: selected ? Colors.white : AppColors.textTertiary,
+          );
+        }),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -105,13 +142,31 @@ class AppTheme {
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           minimumSize: const Size(double.infinity, 54),
           textStyle: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w700,
             fontSize: 16,
-            letterSpacing: 0.2,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
+
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.ink,
+          foregroundColor: AppColors.textOnPrimary,
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -119,8 +174,10 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: const BorderSide(color: AppColors.outline, width: 1.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           minimumSize: const Size(double.infinity, 54),
           textStyle: GoogleFonts.plusJakartaSans(
@@ -143,21 +200,24 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceVariant,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(13),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          borderRadius: BorderRadius.circular(13),
+          borderSide: const BorderSide(color: AppColors.outline, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(13),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(13),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         hintStyle: GoogleFonts.plusJakartaSans(
@@ -178,8 +238,10 @@ class AppTheme {
       ),
 
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? AppColors.primary : null),
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.primary : null,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
 
@@ -191,7 +253,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
 
@@ -204,53 +266,68 @@ class AppTheme {
 
   // ======== GRADIENT HELPERS ========
   static LinearGradient get primaryGradient => const LinearGradient(
-        colors: AppColors.primaryGradientColors,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: AppColors.primaryGradientColors,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   static LinearGradient get heroGradient => const LinearGradient(
-        colors: AppColors.heroGradientColors,
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      );
+    colors: AppColors.heroGradientColors,
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
   static LinearGradient get cardGradient => const LinearGradient(
-        colors: AppColors.cardGradientColors,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: AppColors.cardGradientColors,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   static LinearGradient get accentGradient => const LinearGradient(
-        colors: [Color(0xFF4ECDC4), Color(0xFF44A08D)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: [Color(0xFF3577FF), Color(0xFF00B8D9)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient get blueGradient => const LinearGradient(
+    colors: AppColors.blueGradientColors,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // ======== SHADOW HELPERS ========
   static List<BoxShadow> get cardShadow => [
-        BoxShadow(
-          color: const Color(0xFF0B6E4F).withValues(alpha: 0.08),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
-          spreadRadius: 0,
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF0B6E4F).withValues(alpha: 0.1),
+      blurRadius: 26,
+      offset: const Offset(0, 14),
+      spreadRadius: 0,
+    ),
+  ];
 
   static List<BoxShadow> get buttonShadow => [
-        BoxShadow(
-          color: const Color(0xFF0B6E4F).withValues(alpha: 0.3),
-          blurRadius: 20,
-          offset: const Offset(0, 8),
-          spreadRadius: -4,
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF0B6E4F).withValues(alpha: 0.16),
+      blurRadius: 14,
+      offset: const Offset(0, 6),
+      spreadRadius: -6,
+    ),
+  ];
 
   static List<BoxShadow> get softShadow => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.06),
-          blurRadius: 16,
-          offset: const Offset(0, 4),
-        ),
-      ];
+    BoxShadow(
+      color: const Color(0xFF0D1F1A).withValues(alpha: 0.06),
+      blurRadius: 18,
+      offset: const Offset(0, 9),
+    ),
+  ];
+
+  static List<BoxShadow> get liquidShadow => [
+    BoxShadow(
+      color: const Color(0xFF0D1F1A).withValues(alpha: 0.08),
+      blurRadius: 30,
+      offset: const Offset(0, 16),
+      spreadRadius: -10,
+    ),
+  ];
 }

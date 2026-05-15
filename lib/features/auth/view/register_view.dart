@@ -22,19 +22,21 @@ class _RegisterViewState extends State<RegisterView>
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
 
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
 
     Future.delayed(const Duration(milliseconds: 100), _slideController.forward);
   }
@@ -82,7 +84,10 @@ class _RegisterViewState extends State<RegisterView>
               children: [
                 // AppBar area
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: Row(
                     children: [
                       IconButton(
@@ -149,89 +154,113 @@ class _RegisterViewState extends State<RegisterView>
                             const SizedBox(height: 28),
 
                             // Name
-                             _buildLabel('Nama Lengkap'),
-                             const SizedBox(height: 8),
-                             TextFormField(
-                               controller: auth.nameController,
-                               textInputAction: TextInputAction.next,
-                               textCapitalization: TextCapitalization.words,
-                               style: _inputStyle(),
-                               decoration: InputDecoration(
-                                 hintText: 'Nama lengkap Anda',
-                                 prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
-                                 errorText: auth.nameError.value.isEmpty ? null : auth.nameError.value,
-                               ),
-                             ),
+                            _buildLabel('Nama Lengkap'),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: auth.nameController,
+                              textInputAction: TextInputAction.next,
+                              textCapitalization: TextCapitalization.words,
+                              style: _inputStyle(),
+                              decoration: InputDecoration(
+                                hintText: 'Nama lengkap Anda',
+                                prefixIcon: const Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 20,
+                                ),
+                                errorText: auth.nameError.value.isEmpty
+                                    ? null
+                                    : auth.nameError.value,
+                              ),
+                            ),
 
                             const SizedBox(height: 20),
 
                             // Email
-                             _buildLabel('Email'),
-                             const SizedBox(height: 8),
-                             TextFormField(
-                               controller: auth.emailController,
-                               keyboardType: TextInputType.emailAddress,
-                               textInputAction: TextInputAction.next,
-                               style: _inputStyle(),
-                               decoration: InputDecoration(
-                                 hintText: 'contoh@email.com',
-                                 prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                                 errorText: auth.emailError.value.isEmpty ? null : auth.emailError.value,
-                               ),
-                             ),
+                            _buildLabel('Email'),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: auth.emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              style: _inputStyle(),
+                              decoration: InputDecoration(
+                                hintText: 'contoh@email.com',
+                                prefixIcon: const Icon(
+                                  Icons.email_outlined,
+                                  size: 20,
+                                ),
+                                errorText: auth.emailError.value.isEmpty
+                                    ? null
+                                    : auth.emailError.value,
+                              ),
+                            ),
 
                             const SizedBox(height: 20),
 
                             // Password
-                             _buildLabel('Password'),
-                             const SizedBox(height: 8),
-                             Obx(() => TextFormField(
-                               controller: auth.passwordController,
-                               obscureText: auth.obscurePassword.value,
-                               textInputAction: TextInputAction.next,
-                               style: _inputStyle(),
-                               decoration: InputDecoration(
-                                 hintText: 'Min. 8 karakter',
-                                 prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                                 suffixIcon: GestureDetector(
-                                   onTap: auth.togglePasswordVisibility,
-                                   child: Icon(
-                                     auth.obscurePassword.value
-                                         ? Icons.visibility_off_outlined
-                                         : Icons.visibility_outlined,
-                                     size: 20,
-                                   ),
-                                 ),
-                                 errorText: auth.passwordError.value.isEmpty ? null : auth.passwordError.value,
-                               ),
-                             )),
+                            _buildLabel('Password'),
+                            const SizedBox(height: 8),
+                            Obx(
+                              () => TextFormField(
+                                controller: auth.passwordController,
+                                obscureText: auth.obscurePassword.value,
+                                textInputAction: TextInputAction.next,
+                                style: _inputStyle(),
+                                decoration: InputDecoration(
+                                  hintText: 'Min. 8 karakter',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                    size: 20,
+                                  ),
+                                  suffixIcon: GestureDetector(
+                                    onTap: auth.togglePasswordVisibility,
+                                    child: Icon(
+                                      auth.obscurePassword.value
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  errorText: auth.passwordError.value.isEmpty
+                                      ? null
+                                      : auth.passwordError.value,
+                                ),
+                              ),
+                            ),
 
                             const SizedBox(height: 20),
 
                             // Confirm Password
-                             _buildLabel('Konfirmasi Password'),
-                             const SizedBox(height: 8),
-                             Obx(() => TextFormField(
-                               controller: auth.confirmController,
-                               obscureText: auth.obscureConfirm.value,
-                               textInputAction: TextInputAction.done,
-                               style: _inputStyle(),
-                               onFieldSubmitted: (_) => _handleRegister(),
-                               decoration: InputDecoration(
-                                 hintText: 'Ulangi password',
-                                 prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                                 suffixIcon: GestureDetector(
-                                   onTap: auth.toggleConfirmVisibility,
-                                   child: Icon(
-                                     auth.obscureConfirm.value
-                                         ? Icons.visibility_off_outlined
-                                         : Icons.visibility_outlined,
-                                     size: 20,
-                                   ),
-                                 ),
-                                 errorText: auth.confirmError.value.isEmpty ? null : auth.confirmError.value,
-                               ),
-                             )),
+                            _buildLabel('Konfirmasi Password'),
+                            const SizedBox(height: 8),
+                            Obx(
+                              () => TextFormField(
+                                controller: auth.confirmController,
+                                obscureText: auth.obscureConfirm.value,
+                                textInputAction: TextInputAction.done,
+                                style: _inputStyle(),
+                                onFieldSubmitted: (_) => _handleRegister(),
+                                decoration: InputDecoration(
+                                  hintText: 'Ulangi password',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline_rounded,
+                                    size: 20,
+                                  ),
+                                  suffixIcon: GestureDetector(
+                                    onTap: auth.toggleConfirmVisibility,
+                                    child: Icon(
+                                      auth.obscureConfirm.value
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  errorText: auth.confirmError.value.isEmpty
+                                      ? null
+                                      : auth.confirmError.value,
+                                ),
+                              ),
+                            ),
 
                             const SizedBox(height: 24),
 
@@ -240,30 +269,34 @@ class _RegisterViewState extends State<RegisterView>
                               onTap: auth.toggleTermsAgreement,
                               child: Row(
                                 children: [
-                                  Obx(() => AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    width: 22,
-                                    height: 22,
-                                    decoration: BoxDecoration(
-                                      color: auth.agreedToTerms.value
-                                          ? AppColors.primary
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
+                                  Obx(
+                                    () => AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
                                         color: auth.agreedToTerms.value
                                             ? AppColors.primary
-                                            : AppColors.textTertiary,
-                                        width: 1.5,
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: auth.agreedToTerms.value
+                                              ? AppColors.primary
+                                              : AppColors.textTertiary,
+                                          width: 1.5,
+                                        ),
                                       ),
+                                      child: auth.agreedToTerms.value
+                                          ? const Icon(
+                                              Icons.check_rounded,
+                                              color: Colors.white,
+                                              size: 14,
+                                            )
+                                          : null,
                                     ),
-                                    child: auth.agreedToTerms.value
-                                        ? const Icon(
-                                            Icons.check_rounded,
-                                            color: Colors.white,
-                                            size: 14,
-                                          )
-                                        : null,
-                                  )),
+                                  ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: RichText(
@@ -273,7 +306,9 @@ class _RegisterViewState extends State<RegisterView>
                                           color: AppColors.textSecondary,
                                         ),
                                         children: [
-                                          const TextSpan(text: 'Saya setuju dengan '),
+                                          const TextSpan(
+                                            text: 'Saya setuju dengan ',
+                                          ),
                                           TextSpan(
                                             text: 'Syarat & Ketentuan',
                                             style: GoogleFonts.plusJakartaSans(
@@ -302,74 +337,86 @@ class _RegisterViewState extends State<RegisterView>
                             const SizedBox(height: 28),
 
                             // Register Button
-                            Obx(() => AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              width: double.infinity,
-                              height: 54,
-                              decoration: BoxDecoration(
-                                gradient: auth.isLoading.value ? null : AppTheme.primaryGradient,
-                                color: auth.isLoading.value ? AppColors.surfaceVariant : null,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: auth.isLoading.value ? null : AppTheme.buttonShadow,
+                            Obx(
+                              () => AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: double.infinity,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  gradient: auth.isLoading.value
+                                      ? null
+                                      : AppTheme.primaryGradient,
+                                  color: auth.isLoading.value
+                                      ? AppColors.surfaceVariant
+                                      : null,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: auth.isLoading.value
+                                      ? null
+                                      : AppTheme.buttonShadow,
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: auth.isLoading.value
+                                      ? null
+                                      : _handleRegister,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: auth.isLoading.value
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: AppColors.primary,
+                                          ),
+                                        )
+                                      : Text(
+                                          'Buat Akun',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                ),
                               ),
-                              child: ElevatedButton(
-                                onPressed: auth.isLoading.value ? null : _handleRegister,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Divider
+                            Row(
+                              children: [
+                                const Expanded(child: Divider()),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    'atau',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      color: AppColors.textTertiary,
+                                    ),
                                   ),
                                 ),
-                                child: auth.isLoading.value
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: AppColors.primary,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Buat Akun',
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
-                            )),
+                                const Expanded(child: Divider()),
+                              ],
+                            ),
 
-                             const SizedBox(height: 24),
-                             
-                             // Divider
-                             Row(
-                               children: [
-                                 const Expanded(child: Divider()),
-                                 Padding(
-                                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                                   child: Text(
-                                     'atau',
-                                     style: GoogleFonts.plusJakartaSans(
-                                       fontSize: 13,
-                                       color: AppColors.textTertiary,
-                                     ),
-                                   ),
-                                 ),
-                                 const Expanded(child: Divider()),
-                               ],
-                             ),
+                            const SizedBox(height: 24),
 
-                             const SizedBox(height: 24),
+                            // Google Login Button
+                            Obx(() => _buildGoogleButton()),
 
-                             // Google Login Button
-                             Obx(() => _buildGoogleButton()),
+                            const SizedBox(height: 24),
 
-                             const SizedBox(height: 24),
-
-                             // Already have account
+                            // Already have account
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -415,16 +462,10 @@ class _RegisterViewState extends State<RegisterView>
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Color(0xFFFAFAFA),
-          ],
+          colors: [Colors.white, Color(0xFFFAFAFA)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -509,8 +550,8 @@ class _RegisterViewState extends State<RegisterView>
   }
 
   TextStyle _inputStyle() => GoogleFonts.plusJakartaSans(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.w500,
-        fontSize: 14,
-      );
+    color: AppColors.textPrimary,
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  );
 }

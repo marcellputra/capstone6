@@ -27,6 +27,7 @@ def create_app():
         LoginAPI,
         LoginGoogleAPI,
         ProfileAPI,
+        ProfilePhotoAPI,
         RegisterAPI,
         RequestEmailChangeAPI,
         RequestAppPasswordAPI,
@@ -36,6 +37,9 @@ def create_app():
         SetAppPasswordAPI,
         VerifyAppPasswordOTPAPI,
         VerifyOTPAPI,
+        RequestDeleteAccountOtpAPI,
+        ConfirmDeleteAccountAPI,
+        ReactivateAccountAPI,
     )
     from app.api.users import SaveActivityAPI
     from app.api.disease_news import (
@@ -59,9 +63,13 @@ def create_app():
     api.add_resource(ConfirmEmailChangeAPI, '/api/account/confirm-email-change')
     api.add_resource(RequestPasswordChangeAPI, '/api/account/request-password-change')
     api.add_resource(ConfirmPasswordChangeAPI, '/api/account/confirm-password-change')
+    api.add_resource(RequestDeleteAccountOtpAPI, '/api/account/request-delete-otp')
+    api.add_resource(ConfirmDeleteAccountAPI, '/api/account/delete')
+    api.add_resource(ReactivateAccountAPI, '/api/account/reactivate')
     api.add_resource(LoginAPI, '/api/login')
     api.add_resource(LoginGoogleAPI, '/api/login/google')
     api.add_resource(ProfileAPI, '/api/profile')
+    api.add_resource(ProfilePhotoAPI, '/api/profile/photo')
     api.add_resource(SaveActivityAPI, '/api/activity')
     
     # Disease News endpoints
