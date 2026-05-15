@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/smart_farmasi_banner.png" alt="Smart Farmasi Banner" width="100%">
+</p>
+
 # 💊 Smart Farmasi (Cureva)
 > **Your Intelligent Health & Pharmacy Companion**
 
