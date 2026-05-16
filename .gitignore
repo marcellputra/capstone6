@@ -52,9 +52,12 @@ yarn.lock
 .env
 smart_farmasi_backend/
 android/app/google-services.json
-smart_farmasi_backend/.env
-smart_farmasi_backend/.vscode/
-smart_farmasi_backend/app/static/uploads/
+android/local.properties
+get_sha1.bat
+Catatan Presentasi Smart Health News.txt
+.vscode/
+.idea/
+.agents/
 
 # AI/Agent Metadata (Hidden from GitHub)
 .agents/
