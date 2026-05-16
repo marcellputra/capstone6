@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import '../../../core/api/api_provider.dart';
+import '../../auth/controller/auth_controller.dart';
 
 class Message {
   final String content;
@@ -8,6 +10,9 @@ class Message {
 }
 
 class ChatbotController extends GetxController {
+  final ApiProvider _apiProvider = Get.find<ApiProvider>();
+  final AuthController _authController = Get.find<AuthController>();
+
   var messages = <Message>[].obs;
   var isTyping = false.obs;
 
@@ -17,17 +22,40 @@ class ChatbotController extends GetxController {
     _addWelcome();
   }
 
-  void sendMessage(String text) {
+  Future<void> sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || isTyping.value) return;
 
     messages.add(Message(content: trimmed, isUser: true));
     isTyping.value = true;
 
-    Future.delayed(const Duration(milliseconds: 650), () {
+    try {
+      final response = await _apiProvider.getChatbotResponse(
+        _authController.token.value,
+        trimmed,
+      );
+
+      if (response.status.isOk) {
+        final reply = response.body['reply'] ?? 'Maaf, saya tidak mengerti.';
+        messages.add(Message(content: reply.toString(), isUser: false));
+      } else {
+        messages.add(
+          Message(
+            content: 'Maaf, terjadi gangguan koneksi ke asisten SEHATI.',
+            isUser: false,
+          ),
+        );
+      }
+    } catch (e) {
+      messages.add(
+        Message(
+          content: 'Koneksi ke server terputus. Silakan coba lagi nanti.',
+          isUser: false,
+        ),
+      );
+    } finally {
       isTyping.value = false;
-      messages.add(Message(content: _responseFor(trimmed), isUser: false));
-    });
+    }
   }
 
   void clearChat() {
@@ -40,23 +68,19 @@ class ChatbotController extends GetxController {
     messages.add(
       Message(
         content:
-            'Halo, saya asisten SmartFarmasi. Saya bisa bantu jelaskan gejala ringan, aturan pakai umum, dan kapan sebaiknya konsultasi.',
+            'Halo, saya asisten SEHATI. Saya bisa bantu jelaskan gejala ringan, aturan pakai umum, dan kapan sebaiknya konsultasi.',
         isUser: false,
       ),
     );
   }
 
-  String _responseFor(String text) {
-    final lower = text.toLowerCase();
-    if (lower.contains('demam') || lower.contains('suhu')) {
-      return 'Untuk demam ringan, cukupkan cairan dan istirahat. Obat penurun panas seperti paracetamol dapat dipertimbangkan sesuai aturan pakai. Jika demam tinggi, lebih dari 3 hari, atau disertai sesak, segera konsultasi.';
-    }
-    if (lower.contains('batuk') || lower.contains('pilek')) {
-      return 'Batuk dan pilek sering membaik dengan istirahat, cairan hangat, dan pemantauan gejala. Periksa label obat flu karena sebagian dapat menyebabkan kantuk atau tidak cocok untuk hipertensi.';
-    }
-    if (lower.contains('obat') || lower.contains('dosis')) {
-      return 'Ikuti dosis pada kemasan atau anjuran tenaga kesehatan. Hindari menggandakan dosis dan cek kandungan obat agar tidak minum bahan aktif yang sama dari dua produk berbeda.';
-    }
-    return 'Saya bantu arahkan secara umum, bukan menggantikan konsultasi medis. Ceritakan gejala utama, durasi keluhan, dan obat yang sedang digunakan agar sarannya lebih relevan.';
+  void _addWelcome() {
+    messages.add(
+      Message(
+        content:
+            'Halo, saya asisten SEHATI. Saya bisa bantu jelaskan gejala ringan, aturan pakai umum, dan kapan sebaiknya konsultasi.',
+        isUser: false,
+      ),
+    );
   }
 }

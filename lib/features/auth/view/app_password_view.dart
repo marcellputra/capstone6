@@ -338,10 +338,10 @@ class _AppPasswordViewState extends State<AppPasswordView> {
         const SizedBox(height: 8),
         Text(
           _isPasswordStep
-              ? 'OTP sudah valid. Sekarang buat password khusus SmartFarmasi.'
+              ? 'OTP sudah valid. Sekarang buat password khusus SEHATI.'
               : _isOtpStep
               ? 'Masukkan kode 6 digit yang kami kirim ke email Google Anda.'
-              : 'Password ini hanya untuk SmartFarmasi. Password Gmail asli tidak pernah diminta.',
+              : 'Password ini hanya untuk SEHATI. Password Gmail asli tidak pernah diminta.',
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
@@ -588,7 +588,7 @@ class _AppPasswordViewState extends State<AppPasswordView> {
         const SizedBox(height: 18),
         _buildInfoBox(
           icon: Icons.info_outline_rounded,
-          title: 'Password Khusus SmartFarmasi',
+          title: 'Password Khusus SEHATI',
           body:
               'Password ini tidak mengubah password Google Anda. Anda tetap bisa login dengan Google kapan saja.',
         ),

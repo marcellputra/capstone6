@@ -24,9 +24,7 @@ class HomeView extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate.fixed([
                   const _TopBar(),
-                  const SizedBox(height: 24),
-                  const _SearchBar(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   const _ServiceRow(),
                   const SizedBox(height: 24),
                   const _AIBanner(),
@@ -75,7 +73,7 @@ class _TopBar extends StatelessWidget {
                 Row(
                   children: [
                     const StatusPill(
-                      label: 'SmartFarmasi',
+                      label: 'SEHATI',
                       color: AppColors.primary,
                       icon: Icons.local_pharmacy_rounded,
                     ),
@@ -135,54 +133,13 @@ class _TopBar extends StatelessWidget {
 
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return 'SF';
+    if (parts.isEmpty || parts.first.isEmpty) return 'SH';
     final first = parts.first[0];
     final second = parts.length > 1 && parts[1].isNotEmpty ? parts[1][0] : '';
     return (first + second).toUpperCase();
   }
 }
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.toNamed(AppRoutes.symptom),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Cari disini',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ),
-            const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 22),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _ServiceRow extends StatelessWidget {
   const _ServiceRow();
@@ -215,19 +172,9 @@ class _ServiceRow extends StatelessWidget {
           title: 'Apotek',
           icon: Icons.local_pharmacy_rounded,
           color: AppColors.amber,
-          onTap: () => _comingSoon('Apotek & stok obat'),
+          onTap: () => Get.toNamed(AppRoutes.pharmacy),
         ),
       ],
-    );
-  }
-
-  void _comingSoon(String title) {
-    Get.snackbar(
-      title,
-      'Fitur ini akan aktif setelah data apotek tersedia.',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 16,
     );
   }
 }

@@ -31,6 +31,8 @@ class AuthController extends GetxController {
   var isResendLoading = false.obs;
   var agreedToTerms = false.obs;
   var pendingVerificationEmail = ''.obs;
+  var lastOtpExpiresIn = 180.obs;
+  var lastOtpResendAvailableIn = 180.obs;
 
   // Validation Errors
   var emailError = ''.obs;
@@ -62,6 +64,21 @@ class AuthController extends GetxController {
 
   String _connectionMessage([Object? error]) {
     return 'Server tidak dapat dihubungi. Pastikan internet aktif, backend berjalan, dan URL ngrok masih valid.';
+  }
+
+  int _intFromBody(Map<String, dynamic> body, String key, int fallback) {
+    final value = body[key];
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  void _updateOtpTimingFromBody(Map<String, dynamic> body) {
+    lastOtpExpiresIn.value = _intFromBody(body, 'expires_in', 180);
+    lastOtpResendAvailableIn.value = _intFromBody(
+      body,
+      'resend_available_in',
+      180,
+    );
   }
 
   String _googleErrorMessage(Object error) {
@@ -323,7 +340,7 @@ class AuthController extends GetxController {
                     icon: Icons.key_rounded,
                     title: 'Buat Password Aplikasi',
                     subtitle:
-                        'Verifikasi OTP lalu buat password khusus SmartFarmasi.',
+                        'Verifikasi OTP lalu buat password khusus SEHATI.',
                     onTap: openAppPassword,
                     primary: true,
                   ),
@@ -973,6 +990,7 @@ class AuthController extends GetxController {
       );
       final body = _body(response);
       if (response.status.isOk) {
+        _updateOtpTimingFromBody(body);
         Get.snackbar(
           'OTP Email Baru Terkirim',
           body['message']?.toString() ?? 'Cek email baru Anda.',
@@ -1005,6 +1023,7 @@ class AuthController extends GetxController {
   Future<bool> confirmEmailChange({
     required String newEmail,
     required String otp,
+    bool showSuccessSnackbar = true,
   }) async {
     if (token.value.isEmpty) return false;
     try {
@@ -1018,13 +1037,15 @@ class AuthController extends GetxController {
         if (body['user'] is Map) {
           userData.value = Map<String, dynamic>.from(body['user']);
         }
-        Get.snackbar(
-          'Email Berhasil Diganti',
-          body['message']?.toString() ?? 'Email akun Anda sudah diperbarui.',
-          backgroundColor: Colors.green.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        if (showSuccessSnackbar) {
+          Get.snackbar(
+            'Email Berhasil Diganti',
+            body['message']?.toString() ?? 'Email akun Anda sudah diperbarui.',
+            backgroundColor: Colors.green.shade600,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
         return true;
       }
       Get.snackbar(
@@ -1062,6 +1083,7 @@ class AuthController extends GetxController {
       );
       final body = _body(response);
       if (response.status.isOk) {
+        _updateOtpTimingFromBody(body);
         Get.snackbar(
           'OTP Ganti Password Terkirim',
           body['message']?.toString() ?? 'Cek email Anda.',
@@ -1096,6 +1118,7 @@ class AuthController extends GetxController {
     required String newPassword,
     required String newPasswordConfirmation,
     required String otp,
+    bool showSuccessSnackbar = true,
   }) async {
     if (token.value.isEmpty) return false;
     try {
@@ -1108,14 +1131,16 @@ class AuthController extends GetxController {
       );
       final body = _body(response);
       if (response.status.isOk) {
-        Get.snackbar(
-          'Password Berhasil Diganti',
-          body['message']?.toString() ??
-              'Gunakan password baru saat login berikutnya.',
-          backgroundColor: Colors.green.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        if (showSuccessSnackbar) {
+          Get.snackbar(
+            'Password Berhasil Diganti',
+            body['message']?.toString() ??
+                'Gunakan password baru saat login berikutnya.',
+            backgroundColor: Colors.green.shade600,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
         return true;
       }
       Get.snackbar(
@@ -1144,9 +1169,11 @@ class AuthController extends GetxController {
       final response = await _apiProvider.requestDeleteAccountOtp(token.value);
       final body = _body(response);
       if (response.status.isOk) {
+        _updateOtpTimingFromBody(body);
         Get.snackbar(
           'Kode OTP Dikirim',
-          body['message']?.toString() ?? 'Cek email Anda untuk mendapatkan kode OTP penghapusan akun.',
+          body['message']?.toString() ??
+              'Cek email Anda untuk mendapatkan kode OTP penghapusan akun.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -1195,7 +1222,8 @@ class AuthController extends GetxController {
         Get.offAllNamed(AppRoutes.login);
         Get.snackbar(
           'Akun Dinonaktifkan',
-          body['message']?.toString() ?? 'Akun Anda berhasil dinonaktifkan dan akan dihapus permanen dalam 30 hari.',
+          body['message']?.toString() ??
+              'Akun Anda berhasil dinonaktifkan dan akan dihapus permanen dalam 30 hari.',
           backgroundColor: Colors.orange.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -1205,7 +1233,10 @@ class AuthController extends GetxController {
       }
       Get.snackbar(
         'Konfirmasi Gagal',
-        _message(response, fallback: 'Gagal menonaktifkan akun Anda. Pastikan data benar.'),
+        _message(
+          response,
+          fallback: 'Gagal menonaktifkan akun Anda. Pastikan data benar.',
+        ),
         backgroundColor: Colors.red.shade600,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -1245,12 +1276,13 @@ class AuthController extends GetxController {
 
         Get.snackbar(
           'Akun Diaktifkan Kembali',
-          body['message']?.toString() ?? 'Selamat! Akun Anda telah berhasil dipulihkan.',
+          body['message']?.toString() ??
+              'Selamat! Akun Anda telah berhasil dipulihkan.',
           backgroundColor: Colors.green.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
-        
+
         if (isLogin.value) {
           Get.offAllNamed(AppRoutes.home);
         } else {
@@ -1400,7 +1432,7 @@ class AuthController extends GetxController {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: kIsWeb ? webClientId : null,
         serverClientId: kIsWeb ? null : webClientId,
-        scopes: ['email', 'profile'],
+        scopes: ['email', 'profile', 'openid'],
       );
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -1410,26 +1442,47 @@ class AuthController extends GetxController {
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+      String? idToken = googleAuth.idToken;
+      UserCredential? userCredential;
 
-      // Sign in ke Firebase agar Firebase menerima credential.
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+      // Jika idToken null (sering terjadi di Web), coba fallback ke Firebase Auth Popup
+      if (kIsWeb && idToken == null) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        googleProvider.addScope('openid');
 
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(credential);
-      final String? idToken = googleAuth.idToken;
+        userCredential =
+            await FirebaseAuth.instance.signInWithPopup(googleProvider);
+        final OAuthCredential? credential =
+            userCredential.credential as OAuthCredential?;
+        idToken = credential?.idToken ?? await userCredential.user?.getIdToken();
+      }
 
       if (idToken == null) {
+        String platformInfo = kIsWeb
+            ? 'Pastikan "Authorized JavaScript Origins" di Google Cloud Console sudah mencantumkan URL localhost/domain Anda.'
+            : 'Pastikan SHA-1 dan SHA-256 sudah terdaftar di Firebase Console.';
+
         Get.snackbar(
           'Login Google Gagal',
-          'Token Google tidak diterima. Pastikan Web Client ID, package name, SHA-1, dan SHA-256 di Firebase sudah sesuai.',
+          'Token Google tidak diterima. $platformInfo',
           backgroundColor: Colors.red.shade600,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 7),
         );
         return;
+      }
+
+      // Jika belum login ke Firebase (karena tidak lewat popup fallback)
+      if (userCredential == null) {
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: idToken,
+        );
+        userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
       }
 
       final response = await _apiProvider.loginWithGoogle(

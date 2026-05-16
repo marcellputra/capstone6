@@ -31,7 +31,7 @@ void main() {
         Get.offAllNamed(AppRoutes.login);
         await tester.pumpAndSettle();
 
-        expect(find.text('SmartFarmasi'), findsOneWidget);
+        expect(find.text('SEHATI'), findsOneWidget);
         expect(find.text('Selamat Datang'), findsOneWidget);
         expect(
           find.byType(TextFormField),

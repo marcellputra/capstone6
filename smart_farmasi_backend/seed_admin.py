@@ -1,6 +1,7 @@
 from app import create_app
 from app.models import db, User
 import datetime
+import os
 import sys
 
 def seed_admin():

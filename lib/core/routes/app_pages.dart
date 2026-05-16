@@ -22,6 +22,8 @@ import '../../features/chatbot/binding/chatbot_binding.dart';
 import '../../features/profile/view/profile_view.dart';
 import '../../features/profile/view/edit_profile_view.dart';
 import '../../features/profile/binding/profile_binding.dart';
+import '../../features/pharmacy/view/pharmacy_view.dart';
+import '../../features/pharmacy/binding/pharmacy_binding.dart';
 
 import 'app_routes.dart';
 
@@ -109,6 +111,13 @@ class AppPages {
       name: AppRoutes.editProfile,
       page: () => const EditProfileView(),
       binding: ProfileBinding(),
+    ),
+
+    // Pharmacy - dengan binding
+    GetPage(
+      name: AppRoutes.pharmacy,
+      page: () => const PharmacyView(),
+      binding: PharmacyBinding(),
     ),
   ];
 }

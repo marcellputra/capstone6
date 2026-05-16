@@ -13,4 +13,5 @@ class AppRoutes {
   static const chatbot = '/chatbot';
   static const profile = '/profile';
   static const editProfile = '/profile/edit';
+  static const pharmacy = '/pharmacy';
 }

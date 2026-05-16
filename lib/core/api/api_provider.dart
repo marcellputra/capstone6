@@ -231,8 +231,8 @@ class ApiProvider extends GetConnect {
     return post(
       '/api/account/delete',
       {
-        if (password != null) 'password': password,
-        if (otpCode != null) 'otp_code': otpCode,
+        'password': password,
+        'otp_code': otpCode,
       },
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -245,8 +245,8 @@ class ApiProvider extends GetConnect {
   }) {
     return post('/api/account/reactivate', {
       'email': email,
-      if (password != null) 'password': password,
-      if (googleToken != null) 'google_token': googleToken,
+      'password': password,
+      'google_token': googleToken,
     });
   }
 
@@ -342,5 +342,14 @@ class ApiProvider extends GetConnect {
 
   Future<Response> refreshDiseaseNews() {
     return post('/api/disease-news/refresh', {});
+  }
+
+  // ─── Chatbot ────────────────────────────────
+  Future<Response> getChatbotResponse(String token, String message) {
+    return post(
+      '/api/chatbot',
+      {'message': message},
+      headers: {'Authorization': 'Bearer $token'},
+    );
   }
 }

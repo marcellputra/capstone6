@@ -11,6 +11,15 @@ import os
 import random
 import re
 import uuid
+import firebase_admin
+from firebase_admin import auth as firebase_auth
+
+# Initialize firebase_admin for Web fallback verification
+if not firebase_admin._apps:
+    try:
+        firebase_admin.initialize_app()
+    except Exception as e:
+        print(f"Firebase Admin initialization warning: {e}")
 
 
 OTP_PURPOSE_VERIFY_EMAIL = 'verify_email'
@@ -33,29 +42,35 @@ def _verify_google_token(token):
         raise ValueError('Token Google wajib dikirim')
 
     client_ids = current_app.config.get('GOOGLE_CLIENT_IDS') or []
-    if not client_ids:
-        raise ValueError('Google Client ID belum dikonfigurasi di backend')
-
     last_error = None
+    
+    # 1. Try as standard Google ID Token (Mobile / Direct Web)
     for client_id in client_ids:
         try:
             id_info = google_id_token.verify_oauth2_token(
                 token,
                 google_requests.Request(),
                 client_id,
+                clock_skew_in_seconds=60,
             )
-            if id_info.get('iss') not in {
+            if id_info.get('iss') in {
                 'accounts.google.com',
                 'https://accounts.google.com',
             }:
-                raise ValueError('Issuer token Google tidak valid')
-            if not id_info.get('email_verified', False):
-                raise ValueError('Email Google belum terverifikasi')
-            return id_info
-        except ValueError as exc:
-            last_error = exc
+                return id_info
+        except Exception as e:
+            last_error = e
+            continue
 
-    raise ValueError(f'Token Google tidak valid: {last_error}')
+    # 2. Try as Firebase ID Token (Web Fallback via Popup)
+    try:
+        id_info = firebase_auth.verify_id_token(token)
+        # Firebase token format: 'iss' matches 'https://securetoken.google.com/<project-id>'
+        # Normalize fields to match google-auth format if needed (email is usually same)
+        return id_info
+    except Exception as e:
+        # If both fail, raise the last relevant error
+        raise last_error or e
 
 
 def _is_otp_bypass_email(email):

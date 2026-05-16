@@ -4,10 +4,12 @@ from app.admin.views import init_admin
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_migrate import Migrate
+import os
+from app import config
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('app.config')
+    app.config.from_object(config)
     
     db.init_app(app)
     bcrypt.init_app(app)
@@ -48,6 +50,7 @@ def create_app():
         DiseaseNewsListAPI,
         DiseaseNewsRefreshAPI,
     )
+    from app.api.chatbot import ChatbotAPI
     
     from flask_restful import Api
     api = Api(app)
@@ -77,6 +80,7 @@ def create_app():
     api.add_resource(DiseaseNewsListAPI,     '/api/disease-news')
     api.add_resource(DiseaseNewsRefreshAPI,  '/api/disease-news/refresh')
     api.add_resource(DiseaseNewsImageProxyAPI, '/api/disease-news/image')
+    api.add_resource(ChatbotAPI, '/api/chatbot')
     
     @app.route('/')
     def index():
@@ -105,7 +109,6 @@ def create_app():
     
     # Start background scheduler for disease news auto-refresh and cleanup
     from app.scheduler import start_scheduler
-    import os
     # Only run scheduler in main process (not Flask reloader subprocess)
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
         start_scheduler(app)

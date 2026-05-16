@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_ui_components.dart';
+import '../../../core/routes/app_routes.dart';
 import '../controller/recommendation_controller.dart';
 
 class RecommendationView extends StatelessWidget {
@@ -32,7 +33,7 @@ class RecommendationView extends StatelessWidget {
                 assetPath: 'assets/illustrations/symptom_empty.png',
                 title: 'Belum ada rekomendasi',
                 message:
-                    'Pilih beberapa gejala yang paling sesuai agar SmartFarmasi bisa menampilkan arahan obat.',
+                    'Pilih beberapa gejala yang paling sesuai agar SEHATI bisa menampilkan arahan obat.',
                 actionLabel: 'Pilih gejala',
                 onAction: Get.back,
               ),
@@ -253,9 +254,9 @@ class _MedicineCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _showUnavailable('Cari apotek'),
-                        icon: const Icon(Icons.location_on_outlined, size: 18),
-                        label: const Text('Cari apotek'),
+                        onPressed: () => Get.toNamed(AppRoutes.pharmacy),
+                        icon: const Icon(Icons.local_pharmacy_rounded, size: 18),
+                        label: const Text('Cari Apotek'),
                       ),
                     ),
                     const SizedBox(width: 10),

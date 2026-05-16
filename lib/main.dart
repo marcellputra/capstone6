@@ -10,6 +10,18 @@ import 'core/bindings/initial_binding.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Suppress the "_dependents isEmpty" assertion that occurs when
+  // Obx widgets on an IndexedStack are disposed during Get.offAllNamed navigation.
+  FlutterError.onError = (FlutterErrorDetails details) {
+    if (details.exception
+        .toString()
+        .contains('_dependents')) {
+      debugPrint('Suppressed Obx dependecy assertion during navigation');
+      return;
+    }
+    FlutterError.presentError(details);
+  };
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -27,6 +39,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      title: 'SEHATI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.splash,

@@ -54,7 +54,17 @@ smart_farmasi_backend/.env
 smart_farmasi_backend/.vscode/
 smart_farmasi_backend/app/static/uploads/
 
-# AI Metadata
+# AI/Agent Metadata (Hidden from GitHub)
 .agents/
 .kilo/
+.gemini/
+.antigravity/
+.antigravityignore
 skills-lock.json
+task.md
+implementation_plan.md
+walkthrough.md
+research_notes.md
+experiment_results.md
+analysis_results.md
+scratch/

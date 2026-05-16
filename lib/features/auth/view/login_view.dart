@@ -133,15 +133,17 @@ class _LoginViewState extends State<LoginView> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.local_pharmacy_rounded,
-                            size: 40,
-                            color: AppColors.primary,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Image.asset(
+                              'assets/app_logo.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'SmartFarmasi',
+                          'SEHATI',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,

@@ -49,7 +49,7 @@ class _ChatbotViewState extends State<ChatbotView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Asisten SmartFarmasi'),
+        title: const Text('Asisten SEHATI'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: Get.back,

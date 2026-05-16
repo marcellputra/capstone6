@@ -156,10 +156,12 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.local_pharmacy_rounded,
-                            size: 56,
-                            color: AppColors.primary,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Image.asset(
+                              'assets/app_logo.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),
@@ -175,7 +177,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
                         child: Column(
                           children: [
                             Text(
-                              'SmartFarmasi',
+                              'SEHATI',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w800,

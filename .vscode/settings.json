@@ -7,5 +7,7 @@
         "${workspaceFolder}/smart_farmasi_backend"
     ],
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
+    "C_Cpp.errorSquiggles": "disabled",
+    "cmake.sourceDirectory": "D:/semester 6/capstone/smart_farmasi1/linux"
 }
