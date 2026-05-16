@@ -50,6 +50,8 @@ yarn.lock
 **/__pycache__/
 **/*.pyc
 .env
+smart_farmasi_backend/
+android/app/google-services.json
 smart_farmasi_backend/.env
 smart_farmasi_backend/.vscode/
 smart_farmasi_backend/app/static/uploads/
