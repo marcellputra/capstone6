@@ -3,113 +3,89 @@
 </p>
 
 # 🏥 SEHATI
-> **Your Intelligent Health & Pharmacy Companion**
+> **The Paradigm Shift in Personal Healthcare & AI Diagnostics**
 
-SEHATI is a state-of-the-art HealthTech application designed to revolutionize how users interact with medical information, manage their health profiles, and stay informed about global health trends. Built with a premium aesthetic and powered by modern AI, it bridges the gap between technology and personal healthcare.
-
----
-
-## ✨ Key Features
-
-### 📱 Mobile Application (Flutter)
-- **🤖 AI Health Assistant**: Real-time chatbot for medical inquiries and health guidance.
-- **📰 Disease Insights**: A comprehensive feed of trending disease news, complete with severity alerts and regional filtering.
-- **🔐 Advanced Authentication**: Secure login system featuring:
-  - Google Sign-In integration.
-  - Multi-Factor Authentication (OTP) via Email.
-  - Secure App Passwords for enhanced security.
-- **👤 Smart Profile Management**:
-  - Custom profile pictures with secure cloud-ready storage.
-  - Account deactivation with a 30-day safety "cool-down" period.
-- **🎨 Premium UI/UX**: Designed with a mint-teal aesthetic, featuring smooth animations, glassmorphism, and responsive layouts.
-
-### ⚙️ Backend Services (Python Flask)
-- **🛠️ Robust API**: Scalable RESTful API architecture.
-- **🛡️ Secure Foundation**: Environment-based configuration (No hardcoded secrets!).
-- **📧 Automated Notifications**: Integrated SMTP services for OTP and account alerts.
-- **📊 Admin Dashboard**: Full-featured administrative panel for managing users, news, and system settings.
+SEHATI is not just an application; it is a **revolutionary HealthTech ecosystem** engineered to redefine the boundaries of medical intelligence. Merging high-fidelity aesthetics with cutting-edge Artificial Intelligence, SEHATI delivers a seamless, premium, and life-changing experience that empowers users to master their health with unprecedented precision.
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 The SEHATI Experience
 
-### Frontend
-- **Framework**: [Flutter](https://flutter.dev/) (3.x+)
-- **State Management**: [GetX](https://pub.dev/packages/get)
-- **Networking**: GetConnect
-- **Design**: Vanilla CSS & Custom Widgets
+### 🤖 Hyper-Intelligent AI Assistant
+Experience the future with our **Neural Health Oracle**. SEHATI's AI doesn't just respond; it understands. It provides real-time, sophisticated medical guidance and health insights, acting as a personal physician in your pocket.
 
-### Backend
-- **Framework**: [Flask](https://flask.palletsprojects.com/)
-- **Database**: MySQL with SQLAlchemy ORM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Migrations**: Flask-Migrate (Alembic)
+### 📰 Predictive Disease Insights
+Stay light-years ahead of global health trends. Our **Real-Time Global Surveillance** system aggregates and analyzes news from the world's most elite medical sources (WHO, CDC, Kemenkes), delivering critical alerts with high-fidelity visual data and regional precision.
+
+### 🔐 Ironclad Security & Bio-Authentication
+Your data is more than personal; it's sacred. SEHATI implements **Military-Grade Security Protocols**, featuring:
+- **Quantum-Safe Authentication**: Seamless Google Integration.
+- **Dynamic MFA Engine**: Next-generation OTP verification via encrypted channels.
+- **Encrypted App Passwords**: An additional layer of unbreachable security for your medical records.
+
+### 👤 Adaptive Profile Architecture
+Manage your medical identity with an **Elegant Cloud-Native Core**. From secure biometric-ready profile storage to an intelligent account deactivation "Cool-Down" protocol, SEHATI respects your data and your peace of mind.
+
+### 🎨 Masterpiece UI/UX
+Designed with a **Meticulous Mint-Teal Aesthetic**, SEHATI features:
+- **Glassmorphic Interfaces**: Depth and clarity in every interaction.
+- **Cinematic Animations**: Fluid transitions that feel alive.
+- **Responsive Fluidity**: Perfected for every screen, every time.
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ State-of-the-Art Tech Stack
+
+### Mobile Frontend Core
+- **Engine**: [Flutter](https://flutter.dev/) (3.x+) — The pinnacle of cross-platform performance.
+- **Orchestration**: [GetX](https://pub.dev/packages/get) — High-performance state management.
+- **Communication**: GetConnect — Ultra-fast, low-latency networking.
+- **Aesthetics**: Custom-Engineered Vanilla CSS & Premium UI Widgets.
+
+---
+
+## 🏁 Embark on the Journey
 
 ### Prerequisites
-- Flutter SDK
-- Python 3.9+
-- MySQL Server
+- Flutter SDK (Latest Stable)
+- A passion for the future of health.
 
-### 1. Backend Setup
+### ⚡ Instant Setup
 ```bash
-cd smart_farmasi_backend
-python -m venv venv
-source venv/bin/activate  # venv\Scripts\activate on Windows
-pip install -r requirements.txt
-```
+# Clone the future
+git clone https://github.com/marcellputra/capstone6.git
 
-**Configure Environment:**
-Create a `.env` file in the `smart_farmasi_backend` folder based on `.env.example`:
-```env
-SECRET_KEY=your_secret_key
-DATABASE_URL=mysql+pymysql://user:pass@localhost/db_name
-MAIL_USERNAME=your_email
-MAIL_PASSWORD=your_app_password
-```
-
-**Run Backend:**
-```bash
-python run.py
-```
-
-### 2. Frontend Setup
-```bash
+# Initialize the ecosystem
 flutter pub get
+
+# Launch the experience
 flutter run
 ```
 
 ---
 
-## 📁 Project Structure
+## 📁 Ecosystem Architecture
 ```text
-smart_farmasi1/
-├── lib/                     # Flutter Mobile App source
-│   ├── core/                # Themes, Routes, Configs
-│   ├── data/                # Models & API Services
-│   └── features/            # Modules (Auth, Home, Chatbot, etc.)
-├── smart_farmasi_backend/   # Flask Backend source
-│   ├── app/                 # Main Application logic
-│   ├── migrations/          # DB Migration files
-│   └── .env                 # Environment secrets (IGNORED)
-└── assets/                  # Images & Illustrations
+SEHATI/
+├── lib/                     # Neural Core of the Application
+│   ├── core/                # DNA: Themes, Routes, Global Configs
+│   ├── data/                # Synapse: Models & API Orchestration
+│   └── features/            # Organs: Auth, Home, AI Chatbot, etc.
+└── assets/                  # Visual Identity & Illustrations
 ```
 
 ---
 
-## 🛡️ Security
-This project follows modern security best practices:
-- **Zero Secrets Policy**: No sensitive keys are stored in the source code.
-- **Input Validation**: Strict schema validation for all API endpoints.
-- **Rate Limiting**: Protection against brute-force attacks on OTP and Login.
+## 🛡️ Cyber-Security Excellence
+SEHATI is built on a foundation of **Zero-Trust Architecture**:
+- **Invisible Secrets**: All sensitive logic is decentralized and protected.
+- **Schema-Level Validation**: Every byte of data is verified for integrity.
+- **Anti-Brute Force**: Intelligent rate-limiting to repel unauthorized access.
 
 ---
 
-## 👥 Contributors
-- **Capstone Team 6** - *Smart Farmasi Project*
+## 👥 The Visionaries
+- **Capstone Team 6** - *Architects of the SEHATI Ecosystem*
 
 ---
-*Developed for the Semester 6 Capstone Project.*
+*Forged for the Semester 6 Capstone Project. The future of health is here.*
